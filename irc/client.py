@@ -1,5 +1,4 @@
 from .message import IRCMessage, ParseError
-from .plugin import PongPlugin
 import logging
 logger = logging.getLogger(__name__)
 
@@ -12,7 +11,6 @@ class IRCClient:
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
         self.plugins = []
-        self.plugins.append(PongPlugin(self))
         self._buffer = bytearray()
 
     def __iter__(self):

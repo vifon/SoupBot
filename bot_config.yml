@@ -1,0 +1,14 @@
+server: irc.freenode.net
+port: 7000
+
+bot:
+  nick: Wydrek
+  name: A pluggable IRC bot
+
+plugins:
+  - irc.plugins.pong.PongPlugin
+  - irc.plugins.offline_msg.OfflineMessages:
+      user: example_user
+
+channels:
+  - '#example'

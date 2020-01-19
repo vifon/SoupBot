@@ -1,15 +1,13 @@
-from .client import IRCClient
-from .plugin import IRCPlugin
+from irc.plugin import IRCPlugin
 import logging
 import re
 import time
-logger = logging.getLogger(__name__)
 
 
 class OfflineMessages(IRCPlugin):
-    def __init__(self, user, *args, **kwargs):
-        self.user = re.escape(user)
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = self.config['user']
         self.messages = []
 
     def react(self, msg):
@@ -18,7 +16,7 @@ class OfflineMessages(IRCPlugin):
             self.client.send('NAMES', msg.args[0])
             names = self.client.recv().body.split()
             if self.user in names:
-                logger.info("Not saving, user present.")
+                self.logger.info("Not saving, user present.")
             else:
                 self.store(msg)
         elif msg.command == 'JOIN' \
@@ -33,10 +31,10 @@ class OfflineMessages(IRCPlugin):
             'body': msg.body,
         }
         self.messages.append(stored)
-        logger.info("Storing: %s", stored)
+        self.logger.info("Storing: %s", stored)
 
     def dump(self):
-        logger.info("Dumping %d messages.", len(self.messages))
+        self.logger.info("Dumping %d messages.", len(self.messages))
         for message in self.messages:
             self.client.send(
                 'PRIVMSG',
@@ -44,10 +42,3 @@ class OfflineMessages(IRCPlugin):
                 body="<{sender}> {body}".format(**message)
             )
             time.sleep(2)
-
-
-class MessageBot(IRCClient):
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
-        self.plugins.append(OfflineMessages(user, self))

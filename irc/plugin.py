@@ -1,6 +1,9 @@
 class IRCPlugin:
-    def __init__(self, client):
+    def __init__(self, client, config=None):
         self.client = client
+        self.config = config or {}
+        self.logger = self.client.logger.getChild(type(self).__name__)
+        self.logger.info("Initalizing plugin.")
 
     def match(self, msg):
         raise NotImplementedError()
@@ -11,11 +14,3 @@ class IRCPlugin:
     def react(self, msg):
         if self.match(msg):
             self.respond(msg)
-
-
-class PongPlugin(IRCPlugin):
-    def match(self, msg):
-        return msg.command == 'PING'
-
-    def respond(self, msg):
-        self.client.send('PONG', body=msg.body)
