@@ -24,20 +24,24 @@ class OfflineMessages(IRCPlugin):
     def react(self, msg):
         if msg.command == 'PRIVMSG' \
            and re.search(f"\\b{self.user}\\b", msg.body):
-            channel = msg.args[0]
-            if not channel.startswith("#"):
-                return
-            self.client.send('NAMES', channel)
-            names = self.client.recv().body.split()
-            if self.user in names:
-                self.logger.info("Not saving, user present.")
-            else:
-                self.store(msg)
+            self.store_maybe(msg)
         elif msg.command == 'JOIN' \
              and msg.sender.nick.startswith(self.user):
-            self.dump()
-            c = self.client.db.cursor()
-            c.execute('DELETE FROM offline_msg')
+            channel = msg.args[0]
+            self.dump(channel)
+
+    def store_maybe(self, msg):
+        channel = msg.args[0]
+        if not channel.startswith("#"):
+            # It doesn't make sense to store messages sent directly to
+            # the bot.  It was also a possible DoS attack.
+            return
+        self.client.send('NAMES', channel)
+        names = self.client.recv().body.split()
+        if self.user in names:
+            self.logger.info("Not saving, user present.")
+        else:
+            self.store(msg)
 
     def store(self, msg):
         channel = msg.args[0]
@@ -50,12 +54,15 @@ class OfflineMessages(IRCPlugin):
         )
         self.logger.info("Storing: %s", repr(msg.body))
 
-    def dump(self):
+    def dump(self, channel):
         c = self.client.db.cursor()
         c.execute(
             '''
             SELECT sender, channel, body FROM offline_msg
+            WHERE channel=?
+            ORDER BY rowid
             '''
+            (channel,)
         )
         if c.rowcount <= 0:
             return
@@ -70,3 +77,4 @@ class OfflineMessages(IRCPlugin):
                 )
             )
             time.sleep(2)
+        c.execute('DELETE FROM offline_msg WHERE channel=?', (channel,))
