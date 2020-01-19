@@ -64,3 +64,25 @@ class IRCClient:
                         "Plugin %s caused an exception during processing: %s",
                         plugin, repr(msg),
                     )
+
+    def load_plugins(self, plugins):
+        def load_plugins_helper():
+            import importlib
+
+            for plugin_name in plugins:
+                if isinstance(plugin_name, dict):
+                    plugin_name, plugin_config = next(iter(plugin_name.items()))
+                else:
+                    plugin_config = None
+
+                plugin_module, plugin_class = plugin_name.rsplit(".", 1)
+                logger.info("Loading %s", plugin_name)
+                plugin = getattr(
+                    importlib.import_module(plugin_module),
+                    plugin_class)(
+                        config=plugin_config,
+                        client=self,
+                    )
+                yield plugin
+
+        self.plugins.extend(load_plugins_helper())
