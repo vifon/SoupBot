@@ -1,5 +1,6 @@
 from .message import IRCMessage, ParseError
 import logging
+import sqlite3
 logger = logging.getLogger(__name__)
 
 
@@ -11,6 +12,7 @@ class IRCClient:
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
         self.plugins = []
+        self.db = sqlite3.connect('bot.db')
         self._buffer = bytearray()
 
     def __iter__(self):
