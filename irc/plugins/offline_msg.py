@@ -71,7 +71,7 @@ class OfflineMessages(IRCPlugin):
         if count == 0:
             self.logger.info("No messages for %s.", recipient)
             return
-        self.logger.info("Dumping %d messages for %s.", count)
+        self.logger.info("Dumping %d messages for %s.", count, recipient)
 
         c.execute(
             '''
