@@ -39,7 +39,7 @@ class OfflineMessages(IRCPlugin):
             # the bot.  It was also a possible DoS attack.
             return
         self.client.send('NAMES', channel)
-        names = self.client.recv().body.split()
+        names = (nick.lstrip("@+") for nick in self.client.recv().body.split())
         if recipient in names:
             self.logger.info("Not saving, user present.")
         else:
