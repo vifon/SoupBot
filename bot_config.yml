@@ -8,7 +8,8 @@ bot:
 plugins:
   - irc.plugins.pong.PongPlugin
   - irc.plugins.offline_msg.OfflineMessages:
-      user: example_user
+      users:
+        - example_user
 
 channels:
   - '#example'

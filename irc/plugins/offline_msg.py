@@ -8,13 +8,14 @@ import time
 class OfflineMessages(IRCPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user = self.config['user']
-        c = self.client.db.cursor()
+        self.users = self.config['users']
+        c = self.db.cursor()
         c.execute(
             '''
             CREATE TABLE IF NOT EXISTS offline_msg
             (
                 sender STRING,
+                recipient STRING,
                 channel STRING,
                 body STRING
             )
@@ -22,15 +23,16 @@ class OfflineMessages(IRCPlugin):
         )
 
     def react(self, msg):
-        if msg.command == 'PRIVMSG' \
-           and re.search(f"\\b{self.user}\\b", msg.body):
-            self.store_maybe(msg)
-        elif msg.command == 'JOIN' \
-             and msg.sender.nick.startswith(self.user):
-            channel = msg.args[0]
-            self.dump(channel)
+        if msg.command == 'PRIVMSG':
+           for user in self.users:
+               if re.search(f"\\b{user}\\b", msg.body):
+                   self.store_maybe(msg, user)
+        elif msg.command == 'JOIN':
+            if msg.sender.nick in self.users:
+                channel = msg.args[0]
+                self.dump(msg.sender.nick, channel)
 
-    def store_maybe(self, msg):
+    def store_maybe(self, msg, recipient):
         channel = msg.args[0]
         if not channel.startswith("#"):
             # It doesn't make sense to store messages sent directly to
@@ -38,35 +40,47 @@ class OfflineMessages(IRCPlugin):
             return
         self.client.send('NAMES', channel)
         names = self.client.recv().body.split()
-        if self.user in names:
+        if recipient in names:
             self.logger.info("Not saving, user present.")
         else:
-            self.store(msg)
+            self.store(msg, recipient)
 
-    def store(self, msg):
+    def store(self, msg, recipient):
         channel = msg.args[0]
-        c = self.client.db.cursor()
+        c = self.db.cursor()
         c.execute(
             '''
-            INSERT INTO offline_msg (sender, channel, body) VALUES (?, ?, ?)
+            INSERT INTO offline_msg
+            (sender, recipient, channel, body)
+            VALUES
+            (?, ?, ?, ?)
             ''',
-            (msg.sender.nick, channel, msg.body)
+            (msg.sender.nick, recipient, channel, msg.body)
         )
-        self.logger.info("Storing: %s", repr(msg.body))
+        self.db.commit()
+        self.logger.info("Storing %s for %s", repr(msg.body), recipient)
 
-    def dump(self, channel):
-        c = self.client.db.cursor()
+    def dump(self, recipient, channel):
+        c = self.db.cursor()
+
+        c.execute(
+            'SELECT COUNT(*) FROM offline_msg WHERE channel=? AND recipient=?',
+            (channel, recipient)
+        )
+        count = c.fetchone()[0]
+        if count == 0:
+            self.logger.info("No messages for %s.", recipient)
+            return
+        self.logger.info("Dumping %d messages for %s.", count)
+
         c.execute(
             '''
             SELECT sender, channel, body FROM offline_msg
-            WHERE channel=?
+            WHERE channel=? AND recipient=?
             ORDER BY rowid
-            '''
-            (channel,)
+            ''',
+            (channel, recipient)
         )
-        if c.rowcount <= 0:
-            return
-        self.logger.info("Dumping %d messages.", c.rowcount)
         for sender, channel, body in c:
             self.client.send(
                 'PRIVMSG',
@@ -77,4 +91,9 @@ class OfflineMessages(IRCPlugin):
                 )
             )
             time.sleep(2)
-        c.execute('DELETE FROM offline_msg WHERE channel=?', (channel,))
+
+        c.execute(
+            'DELETE FROM offline_msg WHERE channel=? AND recipient=?',
+            (channel, recipient)
+        )
+        self.db.commit()

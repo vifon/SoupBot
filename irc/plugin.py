@@ -14,3 +14,7 @@ class IRCPlugin:
     def react(self, msg):
         if self.match(msg):
             self.respond(msg)
+
+    @property
+    def db(self):
+        return self.client.db
