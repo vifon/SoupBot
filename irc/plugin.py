@@ -7,14 +7,25 @@ class IRCPlugin:
         self.logger.info("Initalizing plugin.")
 
     def match(self, msg):
+        """Check whether to react to the given message.
+
+        This value is also passed to `respond()` instead of the
+        original message if it's not boolean but still true-like
+        value.
+
+        """
         raise NotImplementedError()
 
     def respond(self, msg):
         raise NotImplementedError()
 
     def react(self, msg):
-        if self.match(msg):
-            self.respond(msg)
+        match = self.match(msg)
+        if match:
+            if match is True:
+                self.respond(msg)
+            else:
+                self.respond(match)
 
     def _shared_data_init(self):
         return None
