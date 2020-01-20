@@ -34,19 +34,11 @@ class NameTrack(IRCPlugin):
         self.logger.info("No cached names for %s, querying…", channel)
         self.client.send('NAMES', channel)
         names = set()
-        def is_relevant(msg):
-                try:
-                    return (
-                        msg.args[0] == self.client.nick
-                        and msg.args[-1] == channel
-                    )
-                except IndexError:
-                    return False
         while True:
             response = self.client.recv()
-            if response.body == "End of /NAMES list.":
+            if response.command == "366":  # RPL_ENDOFNAMES
                 break
-            if is_relevant(response):
+            if response.command == "353":  # RPL_NAMREPLY
                 names.update(
                     nick.lstrip("@+")
                     for nick in response.body.split()
