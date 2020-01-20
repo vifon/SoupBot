@@ -80,7 +80,7 @@ class IRCClient:
                 try:
                     if plugin.react(msg):
                         break
-                except Exception as e:
+                except Exception:
                     self.logger.exception(
                         "%s caused an exception during processing: %s",
                         plugin, repr(msg),

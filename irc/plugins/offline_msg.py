@@ -1,8 +1,6 @@
 from datetime import datetime
 from irc.plugin import IRCPlugin
-import logging
 import re
-import sqlite3
 import time
 
 
@@ -26,9 +24,9 @@ class OfflineMessages(IRCPlugin):
 
     def react(self, msg):
         if msg.command == 'PRIVMSG':
-           for user in self.users:
-               if re.search(f"\\b{user}\\b", msg.body):
-                   self.store_maybe(msg, user)
+            for user in self.users:
+                if re.search(f"\\b{user}\\b", msg.body):
+                    self.store_maybe(msg, user)
         elif msg.command == 'JOIN':
             if msg.sender.nick in self.users:
                 channel = msg.args[0]
@@ -82,13 +80,13 @@ class OfflineMessages(IRCPlugin):
 
         c.execute(
             '''
-            SELECT time, sender, channel, body FROM offline_msg
+            SELECT time, sender, body FROM offline_msg
             WHERE channel=? AND recipient=?
             ORDER BY rowid
             ''',
             (channel, recipient)
         )
-        for timestamp, sender, channel, body in c:
+        for timestamp, sender, body in c:
             self.client.send(
                 'PRIVMSG',
                 channel,
