@@ -4,6 +4,7 @@ port: 7000
 bot:
   nick: Wydrek
   name: A pluggable IRC bot
+  sqlite_db: bot.db
 
 plugins:
   - irc.plugins.pong.PongPlugin

@@ -5,14 +5,21 @@ logger = logging.getLogger(__name__)
 
 
 class IRCClient:
-    def __init__(self, socket, buffer_size=2048, encoding='utf-8', **config):
+    def __init__(
+            self,
+            socket,
+            buffer_size=2048,
+            encoding='utf-8',
+            sqlite_db=':memory:',
+            **config,
+    ):
         self.socket = socket
         self.buffer_size = buffer_size
         self.encoding = encoding
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
         self.plugins = []
-        self.db = sqlite3.connect('bot.db')
+        self.db = sqlite3.connect(sqlite_db)
         self._buffer = bytearray()
 
     def __iter__(self):
