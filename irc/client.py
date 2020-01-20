@@ -1,4 +1,5 @@
 from .message import IRCMessage, ParseError
+from types import SimpleNamespace
 import logging
 import sqlite3
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ class IRCClient:
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
         self.plugins = []
+        self.shared_data = SimpleNamespace()
         self.db = sqlite3.connect(
             sqlite_db,
             detect_types=sqlite3.PARSE_DECLTYPES,
