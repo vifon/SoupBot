@@ -35,6 +35,8 @@ class IRCClient:
 
     @property
     def nick(self):
+        # TODO: Return real nick when the nick collisions handling
+        # gets implemented, not the one in the config.
         return self.config['nick']
 
     def recv(self):
@@ -70,6 +72,7 @@ class IRCClient:
             "USER", self.config['nick'], "*", "*", body=self.config['name']
         )
         self.send('NICK', self.config['nick'])
+        # TODO: Handle nick collisions.
 
     def event_loop(self):
         for msg in self:
