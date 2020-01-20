@@ -7,7 +7,11 @@ import socket
 import ssl
 import yaml
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s %(levelname)s:%(name)s:%(message)s",
+    datefmt="%H:%M"
+)
 
 
 def load_config(path):
