@@ -57,8 +57,7 @@ class OfflineMessages(IRCPlugin):
             '''
             INSERT INTO offline_msg
             (time, sender, recipient, channel, body)
-            VALUES
-            (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             ''',
             (datetime.now(), msg.sender.nick, recipient, channel, msg.body)
         )
