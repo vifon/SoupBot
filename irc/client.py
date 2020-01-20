@@ -45,7 +45,7 @@ class IRCClient:
             separator_pos = self._buffer.find(separator)
         msg = self._buffer[:separator_pos].decode(self.encoding)
         self._buffer = self._buffer[separator_pos+len(separator):]
-        self.logger.info(" >>> %s", repr(msg))
+        self.logger.info(">>> %s", repr(msg))
 
         try:
             return IRCMessage.parse(msg)
@@ -58,7 +58,7 @@ class IRCClient:
         self.sendmsg(msg)
 
     def sendmsg(self, msg):
-        self.logger.info(" <<< %s", msg)
+        self.logger.info("<<< %s", msg)
         self.socket.send(f"{msg}\r\n".encode(self.encoding))
 
     def join(self, channel):
@@ -79,7 +79,7 @@ class IRCClient:
                         break
                 except Exception as e:
                     self.logger.exception(
-                        "Plugin %s caused an exception during processing: %s",
+                        "%s caused an exception during processing: %s",
                         plugin, repr(msg),
                     )
 
