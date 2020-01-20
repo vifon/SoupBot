@@ -1,10 +1,11 @@
 class IRCPlugin:
     def __init__(self, client, config=None):
         self.client = client
-        self.config = config or {}
         self.logger = self.client.logger.getChild(type(self).__name__)
-        self.shared_data = self._shared_data_init()
         self.logger.info("Initalizing plugin.")
+
+        self.config = config or {}
+        self.shared_data = self._shared_data_init()
 
     def match(self, msg):
         """Check whether to react to the given message.

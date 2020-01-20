@@ -97,7 +97,6 @@ class IRCClient:
                     plugin_config = None
 
                 plugin_module, plugin_class = plugin_name.rsplit(".", 1)
-                logger.info("Loading %s", plugin_name)
                 plugin = getattr(
                     importlib.import_module(plugin_module),
                     plugin_class)(
