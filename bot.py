@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from irc.client import IRCClient
+import argparse
 import importlib
 import logging
 import socket
@@ -20,7 +21,11 @@ def load_config(path):
 
 
 def run_bot():
-    conf = load_config("bot_config.yml")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('config_file')
+    args = parser.parse_args()
+
+    conf = load_config(args.config_file)
     hostname = conf.pop('server')
     port = conf.pop('port')
     with socket.create_connection((hostname, port)) as sock:
