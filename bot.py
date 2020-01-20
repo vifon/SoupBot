@@ -4,6 +4,7 @@ from irc.client import IRCClient
 import argparse
 import importlib
 import logging
+import signal
 import socket
 import ssl
 import yaml
@@ -32,6 +33,14 @@ def run_bot():
         context = ssl.create_default_context()
         with context.wrap_socket(sock, server_hostname=hostname) as ssock:
             bot = IRCClient(ssock, **conf['bot'])
+
+            def reload_plugins(*ignore):
+                nonlocal conf
+                conf = load_config(args.config_file)
+                bot.reset_plugin_state()
+                bot.load_plugins(conf['plugins'])
+            signal.signal(signal.SIGUSR1, reload_plugins)
+
             bot.load_plugins(conf['plugins'])
             bot.greet()
             for channel in conf['channels']:

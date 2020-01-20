@@ -19,13 +19,12 @@ class IRCClient:
         self.encoding = encoding
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
-        self.plugins = []
-        self.shared_data = SimpleNamespace()
         self.db = sqlite3.connect(
             sqlite_db,
             detect_types=sqlite3.PARSE_DECLTYPES,
         )
         self._buffer = bytearray()
+        self.reset_plugin_state()
 
     def __iter__(self):
         return self
@@ -88,7 +87,9 @@ class IRCClient:
 
     def load_plugins(self, plugins):
         def load_plugins_helper():
-            import importlib
+            def load_or_reload(module):
+                import importlib
+                return importlib.reload(importlib.import_module(module))
 
             for plugin_name in plugins:
                 if isinstance(plugin_name, dict):
@@ -98,7 +99,7 @@ class IRCClient:
 
                 plugin_module, plugin_class = plugin_name.rsplit(".", 1)
                 plugin = getattr(
-                    importlib.import_module(plugin_module),
+                    load_or_reload(plugin_module),
                     plugin_class)(
                         config=plugin_config,
                         client=self,
@@ -106,3 +107,7 @@ class IRCClient:
                 yield plugin
 
         self.plugins.extend(load_plugins_helper())
+
+    def reset_plugin_state(self):
+        self.plugins = []
+        self.shared_data = SimpleNamespace()
