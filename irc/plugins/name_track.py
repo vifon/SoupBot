@@ -14,21 +14,33 @@ class defaultdict_with_key(defaultdict):
 
 class NameTrack(IRCPlugin):
     def react(self, msg):
-        if msg.command in ['JOIN']:
+        def JOIN(msg):
             channel = msg.args[0]
             nick = msg.sender.nick
             self.acknowledge(channel, nick)
-        elif msg.command in ['PART', 'QUIT']:
+
+        def PART(msg):
             channel = msg.args[0]
             nick = msg.sender.nick
             self.forget(channel, nick)
-        elif msg.command in ['KICK']:
+
+        def QUIT(msg):
+            nick = msg.sender.nick
+            for channel, nicks in self.shared_data.items():
+                if nick in nicks:
+                    self.forget(channel, nick)
+
+        def KICK(msg):
             channel, nick = msg.args
             self.forget(channel, nick)
-        elif msg.command in ['NICK']:
+
+        def NICK(msg):
             old_nick = msg.sender.nick
             new_nick = msg.args[0]
             self.rename(old_nick, new_nick)
+
+        if msg.command in ('JOIN', 'PART', 'QUIT', 'KICK', 'NICK'):
+            locals()[msg.command](msg)
 
     def query_names(self, channel):
         self.logger.info("No cached names for %s, querying…", channel)
