@@ -1,4 +1,5 @@
 from irc.plugin import IRCPlugin
+import itertools
 import re
 
 
@@ -24,7 +25,8 @@ class UserScore(IRCPlugin):
             if not channel.startswith("#"):
                 return
             names = self.client.shared_data.NameTrack[channel]
-            name_re = "|".join(map(re.escape, names))
+            scorables = itertools.chain(self.config['scorables'], names)
+            name_re = "|".join(map(re.escape, scorables))
             operators = ["++", "--"]
             operator_re = "|".join(map(re.escape, operators))
             match = re.search(

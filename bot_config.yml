@@ -9,7 +9,9 @@ bot:
 plugins:
   - irc.plugins.pong.PongPlugin
   - irc.plugins.name_track.NameTrack
-  - irc.plugins.user_score.UserScore
+  - irc.plugins.user_score.UserScore:
+      scorables:
+        - bacon
   - irc.plugins.offline_msg.OfflineMessages:
       users:
         - example_user
