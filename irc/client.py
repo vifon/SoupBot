@@ -19,7 +19,10 @@ class IRCClient:
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
         self.plugins = []
-        self.db = sqlite3.connect(sqlite_db)
+        self.db = sqlite3.connect(
+            sqlite_db,
+            detect_types=sqlite3.PARSE_DECLTYPES,
+        )
         self._buffer = bytearray()
 
     def __iter__(self):

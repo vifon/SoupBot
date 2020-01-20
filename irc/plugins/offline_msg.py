@@ -1,3 +1,4 @@
+from datetime import datetime
 from irc.plugin import IRCPlugin
 import logging
 import re
@@ -14,6 +15,7 @@ class OfflineMessages(IRCPlugin):
             '''
             CREATE TABLE IF NOT EXISTS offline_msg
             (
+                time TIMESTAMP,
                 sender STRING,
                 recipient STRING,
                 channel STRING,
@@ -51,11 +53,11 @@ class OfflineMessages(IRCPlugin):
         c.execute(
             '''
             INSERT INTO offline_msg
-            (sender, recipient, channel, body)
+            (time, sender, recipient, channel, body)
             VALUES
-            (?, ?, ?, ?)
+            (?, ?, ?, ?, ?)
             ''',
-            (msg.sender.nick, recipient, channel, msg.body)
+            (datetime.now(), msg.sender.nick, recipient, channel, msg.body)
         )
         self.db.commit()
         self.logger.info("Storing %s for %s", repr(msg.body), recipient)
@@ -75,17 +77,18 @@ class OfflineMessages(IRCPlugin):
 
         c.execute(
             '''
-            SELECT sender, channel, body FROM offline_msg
+            SELECT time, sender, channel, body FROM offline_msg
             WHERE channel=? AND recipient=?
             ORDER BY rowid
             ''',
             (channel, recipient)
         )
-        for sender, channel, body in c:
+        for timestamp, sender, channel, body in c:
             self.client.send(
                 'PRIVMSG',
                 channel,
-                body="<{sender}> {body}".format(
+                body="{time} <{sender}> {body}".format(
+                    time=timestamp.strftime("%H:%M"),
                     sender=sender,
                     body=body,
                 )
