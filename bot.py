@@ -26,8 +26,8 @@ def run_bot():
     args = parser.parse_args()
 
     conf = load_config(args.config_file)
-    hostname = conf.pop('server')
-    port = conf.pop('port')
+    hostname = conf['server']
+    port = conf['port']
     with socket.create_connection((hostname, port)) as sock:
         context = ssl.create_default_context()
         with context.wrap_socket(sock, server_hostname=hostname) as ssock:
