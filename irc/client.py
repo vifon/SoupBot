@@ -33,6 +33,10 @@ class IRCClient:
     def __next__(self):
         return self.recv()
 
+    @property
+    def nick(self):
+        return self.config['nick']
+
     def recv(self):
         separator = b"\r\n"
         separator_pos = self._buffer.find(separator)

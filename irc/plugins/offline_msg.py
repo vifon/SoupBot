@@ -40,8 +40,13 @@ class OfflineMessages(IRCPlugin):
             # It doesn't make sense to store messages sent directly to
             # the bot.  It was also a possible DoS attack.
             return
-        self.client.send('NAMES', channel)
-        names = (nick.lstrip("@+") for nick in self.client.recv().body.split())
+        try:
+            names = self.client.shared_data.NameTrack[channel]
+        except AttributeError:
+            # Fall back to manual querying if the NameTrack plugin
+            # isn't loaded.
+            self.client.send('NAMES', channel)
+            names = (nick.lstrip("@+") for nick in self.client.recv().body.split())
         if recipient in names:
             self.logger.info("Not saving, user present.")
         else:
