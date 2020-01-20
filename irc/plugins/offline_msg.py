@@ -24,8 +24,8 @@ class OfflineMessages(IRCPlugin):
 
     def react(self, msg):
         if msg.command == 'PRIVMSG':
-            for user in self.users:
-                if re.search(f"\\b{user}\\b", msg.body):
+            for user in map(re.escape, self.users):
+                if re.search(fr"\b{user}\b", msg.body):
                     self.store_maybe(msg, user)
         elif msg.command == 'JOIN':
             if msg.sender.nick in self.users:
