@@ -48,10 +48,15 @@ class UserScore(IRCPlugin):
             if match:
                 nick = match.group('nick1') or match.group('nick2')
                 op = match.group('op1') or match.group('op2')
-                return nick, channel, op
+                return msg.sender.nick, nick, channel, op
 
     def respond(self, data):
-        nick, channel, operator = data
+        sender, nick, channel, operator = data
+
+        if sender == nick:
+            self.client.send('PRIVMSG', channel, body=f"{sender}: No self-scoring!")
+            return
+
         value_map = {
             '++': +1,
             '--': -1,
