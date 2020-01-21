@@ -29,23 +29,26 @@ class UserScore(IRCPlugin):
             name_re = "|".join(map(re.escape, scorables))
             operators = ["++", "--"]
             operator_re = "|".join(map(re.escape, operators))
+            separator_re = r'[^\w+-]'
             match = re.search(
                 fr'''
-                (?:\W|^)
-                (?P<pre>{operator_re})?
-                (?P<nick>{name_re})
-                (?P<post>{operator_re})?
-                (?:\W|$)
+                (?:{separator_re}|^)
+                (?P<op1>{operator_re})
+                (?P<nick1>{name_re})
+                (?:{separator_re}|$)
+                |
+                (?:{separator_re}|^)
+                (?P<nick2>{name_re})
+                (?P<op2>{operator_re})
+                (?:{separator_re}|$)
                 ''',
                 msg.body,
                 flags=re.VERBOSE,
             )
             if match:
-                if bool(match.group('pre')) == bool(match.group('post')):
-                    # We only want one of the operators, not both or none.
-                    return
-                operator = match.group('pre') or match.group('post')
-                return match.group('nick'), channel, operator
+                nick = match.group('nick1') or match.group('nick2')
+                op = match.group('op1') or match.group('op2')
+                return nick, channel, op
 
     def respond(self, data):
         nick, channel, operator = data
