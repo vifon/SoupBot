@@ -85,11 +85,14 @@ class IRCClient:
                         plugin, repr(msg),
                     )
 
-    def load_plugins(self, plugins):
+    def load_plugins(self, plugins, reload=False):
         def load_plugins_helper():
             def load_or_reload(module):
                 import importlib
-                return importlib.reload(importlib.import_module(module))
+                if reload:
+                    return importlib.reload(importlib.import_module(module))
+                else:
+                    return importlib.import_module(module)
 
             for plugin_name in plugins:
                 if isinstance(plugin_name, dict):
