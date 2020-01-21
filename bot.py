@@ -2,7 +2,6 @@
 
 from irc.client import IRCClient
 import argparse
-import importlib
 import logging
 import signal
 import socket
