@@ -3,6 +3,7 @@
 from irc.client import IRCClient
 import argparse
 import logging
+import os
 import signal
 import socket
 import ssl
@@ -45,6 +46,9 @@ def run_bot():
                 bot.reset_plugin_state()
                 bot.load_plugins(conf['plugins'])
             signal.signal(signal.SIGUSR1, reload_plugins)
+            logger.info(
+                f"Use 'kill -SIGUSR1 {os.getpid()}' to reload all plugins."
+            )
 
             bot.load_plugins(conf['plugins'])
             bot.greet()
