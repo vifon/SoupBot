@@ -51,10 +51,11 @@ class NameTrack(IRCPlugin):
             if response.command == "366":  # RPL_ENDOFNAMES
                 break
             if response.command == "353":  # RPL_NAMREPLY
-                names.update(
-                    nick.lstrip("@+")
-                    for nick in response.body.split()
-                )
+                if response.args[-1] == channel:
+                    names.update(
+                        nick.lstrip("@+")
+                        for nick in response.body.split()
+                    )
         self.logger.info("Nicks on %s: %s", channel, names)
         return names
 
