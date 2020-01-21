@@ -15,7 +15,7 @@ class IRCPlugin:
         value.
 
         """
-        raise NotImplementedError()
+        return None
 
     def respond(self, msg):
         raise NotImplementedError()
