@@ -21,6 +21,12 @@ def load_config(path):
         return yaml.safe_load(conf_fd.read())
 
 
+def live_debug(*ignore):
+    import pdb
+    pdb.set_trace()
+signal.signal(signal.SIGUSR2, live_debug)
+
+
 def run_bot():
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file')
