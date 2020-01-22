@@ -55,14 +55,14 @@ class IRCClient:
             self.logger.warning("Couldn't parse the message.")
             return IRCMessage.unparsed(msg)
 
-    def send(self, command, *args, body=None):
+    def send(self, command, *args, body=None, delay=2):
         msg = IRCMessage(command, *args, body=body)
-        self.sendmsg(msg)
+        self.sendmsg(msg, delay)
 
-    def sendmsg(self, msg):
+    def sendmsg(self, msg, delay):
         self.logger.info("<<< %s", msg)
         self.socket.send(f"{msg}\r\n".encode(self.encoding))
-        time.sleep(2)
+        time.sleep(delay)
 
     def join(self, channel):
         self.send('JOIN', channel)
