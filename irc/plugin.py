@@ -25,7 +25,11 @@ class IRCPlugin:
         else:
             self.shared_data = self._shared_data_init()
 
-    def react(self, msg: 'IRCMessage'):
+    async def start(self) -> None:
+        """Called when all the plugins are already loaded."""
+        pass
+
+    async def react(self, msg: 'IRCMessage'):
         """React to the received message in some way.
 
         If returns a true value, the message won't be processed by any
@@ -63,8 +67,8 @@ class IRCCommandPlugin(IRCPlugin):
         super().__init__(*args, **kwargs)
         self.commands: Dict[str, Callable] = {}
 
-    def react(self, msg: 'IRCMessage'):
-        super().react(msg)
+    async def react(self, msg: 'IRCMessage'):
+        await super().react(msg)
 
         if msg.command == 'PRIVMSG':
             assert msg.body is not None
@@ -75,9 +79,9 @@ class IRCCommandPlugin(IRCPlugin):
                 if match:
                     channel = msg.args[0]
                     sender = msg.sender.nick
-                    command(sender, channel, match, msg)
+                    await command(sender, channel, match, msg)
 
-    def command(
+    async def command(
             self,
             sender: str,
             channel: str,

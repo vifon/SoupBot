@@ -1,6 +1,7 @@
 from .message import IRCMessage
 from types import SimpleNamespace
 from typing import Dict, List, Any, Iterator
+import asyncio
 import logging
 import sqlite3
 import time
@@ -11,13 +12,12 @@ class IRCClient:
     def __init__(
             self,
             socket,
-            buffer_size=2048,
             encoding='utf-8',
             sqlite_db=':memory:',
             **config,
     ):
         self.socket = socket
-        self.buffer_size = buffer_size
+        self.incoming_queue = asyncio.Queue()
         self.encoding = encoding
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
@@ -29,11 +29,11 @@ class IRCClient:
         self.plugins = []
         self.shared_data = SimpleNamespace()
 
-    def __iter__(self) -> Iterator[IRCMessage]:
+    def __aiter__(self):
         return self
 
-    def __next__(self) -> IRCMessage:
-        return self.recv()
+    async def __anext__(self) -> IRCMessage:
+        return await self._recv()
 
     @property
     def nick(self) -> str:
@@ -41,47 +41,51 @@ class IRCClient:
         # gets implemented, not the one in the config.
         return self.config['nick']
 
-    def recv(self) -> IRCMessage:
+    async def recv(self) -> IRCMessage:
+        return await self.incoming_queue.get()
+
+    async def _recv(self) -> IRCMessage:
         separator = b"\r\n"
         separator_pos = self._buffer.find(separator)
         while separator_pos == -1:
-            self._buffer.extend(self.socket.recv(self.buffer_size))
+            self._buffer.extend(await self.socket.reader.read(512))
             separator_pos = self._buffer.find(separator)
         msg = self._buffer[:separator_pos].decode(self.encoding)
         self._buffer = self._buffer[separator_pos+len(separator):]
         self.logger.info(">>> %s", repr(msg))
         return IRCMessage.parse(msg)
 
-    def send(self, command: str, *args: str, body: str = None, delay: int = 2):
+    async def send(self, command: str, *args: str, body: str = None, delay: int = 2):
         msg = IRCMessage(command, *args, body=body)
-        self.sendmsg(msg, delay)
+        await self.sendmsg(msg, delay)
 
-    def sendmsg(self, msg: IRCMessage, delay: int):
+    async def sendmsg(self, msg: IRCMessage, delay: int):
         self.logger.info("<<< %s", msg)
-        self.socket.send(f"{msg}\r\n".encode(self.encoding))
-        time.sleep(delay)
+        self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
+        await self.socket.writer.drain()
+        await asyncio.sleep(delay)
 
-    def greet(self):
-        self.send(
+    async def greet(self):
+        await self.send(
             "USER", self.config['nick'], "*", "*", body=self.config['name'],
             delay=0,
         )
-        self.send('NICK', self.config['nick'], delay=0)
+        await self.send('NICK', self.config['nick'], delay=0)
         # TODO: Handle nick collisions.
 
-    def event_loop(self):
-        for msg in self:
-            for plugin in self.plugins:
-                try:
-                    if plugin.react(msg):
-                        break
-                except Exception:
-                    self.logger.exception(
-                        "%s caused an exception during processing: %s",
-                        plugin, repr(msg),
-                    )
+    async def event_loop(self):
+        async def irc_reader():
+            async for msg in self:
+                await self.incoming_queue.put(msg)
 
-    def load_plugins(self, plugins: List[str], old_data: Dict[str, Any] = None):
+        async def plugin_caller():
+            while True:
+                msg = await self.recv()
+                await asyncio.gather(*(plugin.react(msg) for plugin in self.plugins))
+
+        await asyncio.gather(irc_reader(), plugin_caller())
+
+    async def load_plugins(self, plugins: List[str], old_data: Dict[str, Any] = None):
         if old_data is None:
             old_data = {}
 
@@ -124,7 +128,8 @@ class IRCClient:
         )
         if failed_plugins:
             self.logger.warning("Failed plugins: %s", failed_plugins)
-
+        for plugin in self.plugins:
+            await plugin.start()
 
     def unload_plugins(self) -> Dict[str, Any]:
         self.logger.info("Unloading plugins…")

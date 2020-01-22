@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 from irc.client import IRCClient
+from collections import namedtuple
 import argparse
+import asyncio
 import logging
 import os
 import signal
-import socket
-import ssl
 import yaml
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -27,7 +27,10 @@ def live_debug(*ignore):
 signal.signal(signal.SIGUSR2, live_debug)
 
 
-def run_bot():
+Socket = namedtuple('Socket', ('reader', 'writer'))
+
+
+async def run_bot():
     parser = argparse.ArgumentParser()
     parser.add_argument('config_file')
     args = parser.parse_args()
@@ -35,27 +38,32 @@ def run_bot():
     conf = load_config(args.config_file)
     hostname = conf['server']
     port = conf['port']
-    with socket.create_connection((hostname, port)) as sock:
-        context = ssl.create_default_context()
-        with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-            bot = IRCClient(ssock, **conf['bot'])
+    socket = Socket(*await asyncio.open_connection(
+        hostname, port, ssl=True
+    ))
+    bot = IRCClient(socket, **conf['bot'])
 
-            def reload_plugins(*ignore):
-                nonlocal conf
-                conf = load_config(args.config_file)
-                bot.load_plugins(
-                    conf['plugins'],
-                    old_data=bot.unload_plugins()
-                )
-            signal.signal(signal.SIGUSR1, reload_plugins)
-            logger.info(
-                f"Use 'kill -SIGUSR1 {os.getpid()}' to reload all plugins."
-            )
+    async def reload_plugins():
+        nonlocal conf
+        conf = load_config(args.config_file)
+        await bot.load_plugins(
+            conf['plugins'],
+            old_data=bot.unload_plugins()
+        )
+    asyncio.get_event_loop().add_signal_handler(
+        signal.SIGUSR1,
+        lambda: asyncio.ensure_future(reload_plugins()),
+    )
+    logger.info(
+        f"Use 'kill -SIGUSR1 {os.getpid()}' to reload all plugins."
+    )
 
-            bot.greet()
-            bot.load_plugins(conf['plugins'])
-            bot.event_loop()
+    await bot.greet()
+    await bot.load_plugins(conf['plugins'])
+    await bot.event_loop()
 
 
 if __name__ == '__main__':
-    run_bot()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run_bot())
+    loop.close()

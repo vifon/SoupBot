@@ -2,8 +2,8 @@ from irc.plugin import IRCPlugin
 
 
 class ChannelManager(IRCPlugin):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    async def start(self):
+        await super().start()
 
         channels = set(self.config['channels'])
         join = channels.difference(self.shared_data)
@@ -11,11 +11,11 @@ class ChannelManager(IRCPlugin):
         self.shared_data = channels
 
         for channel in join:
-            self.client.send('JOIN', channel)
             self.logger.info("Joining %s…", channel)
+            await self.client.send('JOIN', channel)
         for channel in part:
-            self.client.send('PART', channel)
             self.logger.info("Parting %s…", channel)
+            await self.client.send('PART', channel)
 
     def _shared_data_init(self):
         return set()
