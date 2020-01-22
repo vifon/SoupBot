@@ -88,6 +88,8 @@ class IRCClient:
                     )
 
     def load_plugins(self, plugins, reload=False):
+        failed_plugins = []
+
         def load_plugins_helper():
             def load_or_reload(module):
                 import importlib
@@ -103,15 +105,28 @@ class IRCClient:
                     plugin_config = None
 
                 plugin_module, plugin_class = plugin_name.rsplit(".", 1)
-                plugin = getattr(
-                    load_or_reload(plugin_module),
-                    plugin_class)(
-                        config=plugin_config,
-                        client=self,
+                try:
+                    plugin = getattr(
+                        load_or_reload(plugin_module),
+                        plugin_class)(
+                            config=plugin_config,
+                            client=self,
+                        )
+                    yield plugin
+                except Exception:
+                    self.logger.exception(
+                        "%s caused an exception during loading.", plugin
                     )
-                yield plugin
+                    failed_plugins.append(plugin_class)
 
         self.plugins.extend(load_plugins_helper())
+        self.logger.info(
+            "Initialized plugins: %s",
+            [type(plugin).__name__ for plugin in self.plugins],
+        )
+        if failed_plugins:
+            self.logger.warning("Failed plugins: %s", failed_plugins)
+
 
     def reset_plugin_state(self):
         self.plugins = []
