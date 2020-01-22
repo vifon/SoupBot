@@ -1,9 +1,72 @@
-from irc.plugin import IRCCommandPlugin
+from irc.plugin import IRCPlugin, IRCCommandPlugin
 import itertools
 import re
 
 
-class UserScore(IRCCommandPlugin):
+class UserScoreQueryMixin(IRCCommandPlugin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.commands.update({
+            r'\.score (\w+)': self.__show_score,
+            r'\.scores(?: ([0-9]+))?$': self.__list_scores,
+        })
+
+    def __show_score(self, sender, channel, match, msg):
+        scorable = match[1]
+        score = self.score(scorable, channel)
+        if score is None:
+            body = f"{scorable} has no score."
+        else:
+            body = f"{scorable}'s score is {score}."
+        self.client.send('PRIVMSG', channel, body=body)
+
+    def __list_scores(self, sender, channel, match, msg):
+        count = match[1] or 5
+        c = self.db.cursor()
+        c.execute(
+            '''
+            SELECT nick, score FROM score
+            WHERE channel=?
+            ORDER BY score DESC
+            LIMIT ?
+            ''',
+            (channel, int(count))
+        )
+        for nick, score in c:
+            self.client.send(
+                'PRIVMSG', channel, body=f"{nick}'s score is {score}."
+            )
+        self.client.send(
+            'PRIVMSG', channel, body="End of scores."
+        )
+
+
+class UserScoreEraseMixin(IRCCommandPlugin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.commands.update({
+            r'\.descore (\w+)': self.__erase_scores,
+        })
+
+    def __erase_scores(self, sender, channel, match, msg):
+        if sender != self.config.get('admin'):
+            return
+
+        nick = match[1]
+        c = self.db.cursor()
+        c.execute(
+            '''
+            DELETE FROM score
+            WHERE nick=? AND channel=?
+            ''',
+            (nick, channel,)
+        )
+        self.client.send(
+            'PRIVMSG', channel, body=f"{nick}'s score erased."
+        )
+
+
+class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         c = self.db.cursor()
@@ -18,17 +81,6 @@ class UserScore(IRCCommandPlugin):
             )
             '''
         )
-
-    command_re = r'\.score (\w+)'
-
-    def command(self, sender, channel, match, msg):
-        scorable = match[1]
-        score = self.score(scorable, channel)
-        if score is None:
-            body = f"{scorable} has no score."
-        else:
-            body = f"{scorable}'s score is {score}."
-        self.client.send('PRIVMSG', channel, body=body)
 
     def react(self, msg):
         super().react(msg)

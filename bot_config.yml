@@ -10,6 +10,7 @@ plugins:
   - irc.plugins.pong.PongPlugin
   - irc.plugins.name_track.NameTrack
   - irc.plugins.user_score.UserScore:
+      admin: vifon
       scorables:
         - bacon
   - irc.plugins.offline_msg.OfflineMessages:

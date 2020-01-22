@@ -44,17 +44,20 @@ class IRCPlugin:
 
 
 class IRCCommandPlugin(IRCPlugin):
-    command_re = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.commands = {}
 
     def react(self, msg):
         super().react(msg)
 
         if msg.command == 'PRIVMSG':
-            match = re.match(self.command_re, msg.body)
-            if match:
-                channel = msg.args[0]
-                sender = msg.sender.nick
-                self.command(sender, channel, match, msg)
+            for command_re, command in self.commands.items():
+                match = re.match(command_re, msg.body)
+                if match:
+                    channel = msg.args[0]
+                    sender = msg.sender.nick
+                    command(sender, channel, match, msg)
 
     def command(self, sender, channel, match, msg):
         raise NotImplementedError()
