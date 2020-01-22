@@ -1,3 +1,6 @@
+import re
+
+
 class IRCPlugin:
     def __init__(self, client, config=None):
         self.client = client
@@ -38,3 +41,20 @@ class IRCPlugin:
     @property
     def db(self):
         return self.client.db
+
+
+class IRCCommandPlugin(IRCPlugin):
+    command_re = None
+
+    def react(self, msg):
+        super().react(msg)
+
+        if msg.command == 'PRIVMSG':
+            match = re.match(self.command_re, msg.body)
+            if match:
+                channel = msg.args[0]
+                sender = msg.sender.nick
+                self.command(sender, channel, match, msg)
+
+    def command(self, sender, channel, match, msg):
+        raise NotImplementedError()
