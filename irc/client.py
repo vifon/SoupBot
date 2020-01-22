@@ -2,6 +2,7 @@ from .message import IRCMessage, ParseError
 from types import SimpleNamespace
 import logging
 import sqlite3
+import time
 logger = logging.getLogger(__name__)
 
 
@@ -61,6 +62,7 @@ class IRCClient:
     def sendmsg(self, msg):
         self.logger.info("<<< %s", msg)
         self.socket.send(f"{msg}\r\n".encode(self.encoding))
+        time.sleep(2)
 
     def join(self, channel):
         self.send('JOIN', channel)

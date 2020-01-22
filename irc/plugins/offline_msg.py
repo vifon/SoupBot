@@ -1,7 +1,6 @@
 from datetime import datetime
 from irc.plugin import IRCPlugin
 import re
-import time
 
 
 class OfflineMessages(IRCPlugin):
@@ -95,7 +94,6 @@ class OfflineMessages(IRCPlugin):
                     body=body,
                 )
             )
-            time.sleep(2)
 
         c.execute(
             'DELETE FROM offline_msg WHERE channel=? AND recipient=?',
