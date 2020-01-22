@@ -1,9 +1,9 @@
-from irc.plugin import IRCPlugin
+from irc.plugin import IRCCommandPlugin
 import itertools
 import re
 
 
-class UserScore(IRCPlugin):
+class UserScore(IRCCommandPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         c = self.db.cursor()
@@ -19,7 +19,20 @@ class UserScore(IRCPlugin):
             '''
         )
 
+    command_re = r'\.score (\w+)'
+
+    def command(self, sender, channel, match, msg):
+        scorable = match[1]
+        score = self.score(scorable, channel)
+        if score is None:
+            body = f"{scorable} has no score."
+        else:
+            body = f"{scorable}'s score is {score}."
+        self.client.send('PRIVMSG', channel, body=body)
+
     def react(self, msg):
+        super().react(msg)
+
         if msg.command == 'PRIVMSG':
             channel = msg.args[0]
             if not channel.startswith("#"):
@@ -61,7 +74,7 @@ class UserScore(IRCPlugin):
         }
         change = value_map[operator]
         self.change_score(nick, channel, change)
-        score = self.score(nick, channel)
+        score = self.score(nick, channel) or 0
         self.client.send('PRIVMSG', channel, body=f"{nick}'s score is now {score}.")
 
     def score(self, nick, channel):
@@ -75,7 +88,7 @@ class UserScore(IRCPlugin):
         )
         value = c.fetchone()
         if value is None:
-            return 0
+            return None
         else:
             return value[0]
 
