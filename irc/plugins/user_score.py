@@ -7,8 +7,8 @@ class UserScoreQueryMixin(IRCCommandPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.commands.update({
-            r'\.score (\w+)': self.__show_score,
-            r'\.scores(?: ([0-9]+))?$': self.__list_scores,
+            r'\.score +(\w+)': self.__show_score,
+            r'\.scores(?: +([0-9]+))?$': self.__list_scores,
         })
 
     def __show_score(self, sender, channel, match, msg):
@@ -45,7 +45,7 @@ class UserScoreEraseMixin(IRCCommandPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.commands.update({
-            r'\.descore (\w+)': self.__erase_scores,
+            r'\.descore +(\w+)': self.__erase_scores,
         })
 
     def __erase_scores(self, sender, channel, match, msg):
