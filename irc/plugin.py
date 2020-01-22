@@ -17,7 +17,7 @@ class IRCPlugin:
         more plugins.
 
         """
-        return None
+        pass
 
     def _shared_data_init(self):
         """The initial value of IRCClient.shared_data.ThisPlugin"""
