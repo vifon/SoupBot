@@ -19,7 +19,7 @@ class UserScore(IRCPlugin):
             '''
         )
 
-    def match(self, msg):
+    def react(self, msg):
         if msg.command == 'PRIVMSG':
             channel = msg.args[0]
             if not channel.startswith("#"):
@@ -48,11 +48,9 @@ class UserScore(IRCPlugin):
             if match:
                 nick = match.group('nick1') or match.group('nick2')
                 op = match.group('op1') or match.group('op2')
-                return msg.sender.nick, nick, channel, op
+                self.respond_score(msg.sender.nick, nick, channel, op)
 
-    def respond(self, data):
-        sender, nick, channel, operator = data
-
+    def respond_score(self, sender, nick, channel, operator):
         if sender == nick:
             self.client.send('PRIVMSG', channel, body=f"{sender}: No self-scoring!")
             return
