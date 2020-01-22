@@ -17,6 +17,5 @@ class JoinChannels(IRCPlugin):
             self.client.send('PART', channel)
             self.logger.info("Parting %s…", channel)
 
-
     def _shared_data_init(self):
         return set()
