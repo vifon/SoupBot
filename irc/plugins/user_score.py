@@ -61,6 +61,7 @@ class UserScoreEraseMixin(IRCCommandPlugin):
             ''',
             (nick, channel,)
         )
+        self.db.commit()
         self.client.send(
             'PRIVMSG', channel, body=f"{nick}'s score erased."
         )
