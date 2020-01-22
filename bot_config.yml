@@ -8,6 +8,9 @@ bot:
 
 plugins:
   - irc.plugins.pong.PongPlugin
+  - irc.plugins.join.JoinChannels:
+      channels:
+        - '#example'
   - irc.plugins.name_track.NameTrack
   - irc.plugins.user_score.UserScore:
       admin: vifon
@@ -16,6 +19,4 @@ plugins:
   - irc.plugins.offline_msg.OfflineMessages:
       users:
         - example_user
-
-channels:
-  - '#example'
+        - vifontest

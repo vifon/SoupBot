@@ -50,10 +50,8 @@ def run_bot():
                 f"Use 'kill -SIGUSR1 {os.getpid()}' to reload all plugins."
             )
 
-            bot.load_plugins(conf['plugins'])
             bot.greet()
-            for channel in conf['channels']:
-                bot.join(channel)
+            bot.load_plugins(conf['plugins'])
             bot.event_loop()
 
 

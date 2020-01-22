@@ -64,10 +64,6 @@ class IRCClient:
         self.socket.send(f"{msg}\r\n".encode(self.encoding))
         time.sleep(delay)
 
-    def join(self, channel):
-        self.send('JOIN', channel)
-        self.logger.info("Joining %s…", channel)
-
     def greet(self):
         self.send(
             "USER", self.config['nick'], "*", "*", body=self.config['name']
