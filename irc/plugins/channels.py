@@ -1,7 +1,7 @@
 from irc.plugin import IRCPlugin
 
 
-class JoinChannels(IRCPlugin):
+class ChannelManager(IRCPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
