@@ -2,13 +2,17 @@ import re
 
 
 class IRCPlugin:
-    def __init__(self, client, config=None):
+    def __init__(self, client, config=None, old_data=None):
         self.client = client
         self.logger = self.client.logger.getChild(type(self).__name__)
         self.logger.info("Initalizing plugin.")
 
         self.config = config or {}
-        self.shared_data = self._shared_data_init()
+
+        if old_data:
+            self.shared_data = old_data
+        else:
+            self.shared_data = self._shared_data_init()
 
     def react(self, msg):
         """React to the received message in some way.

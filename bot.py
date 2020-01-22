@@ -43,8 +43,10 @@ def run_bot():
             def reload_plugins(*ignore):
                 nonlocal conf
                 conf = load_config(args.config_file)
-                bot.reset_plugin_state()
-                bot.load_plugins(conf['plugins'], reload=True)
+                bot.load_plugins(
+                    conf['plugins'],
+                    old_data=bot.unload_plugins()
+                )
             signal.signal(signal.SIGUSR1, reload_plugins)
             logger.info(
                 f"Use 'kill -SIGUSR1 {os.getpid()}' to reload all plugins."

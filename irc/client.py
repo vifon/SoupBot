@@ -25,7 +25,8 @@ class IRCClient:
             detect_types=sqlite3.PARSE_DECLTYPES,
         )
         self._buffer = bytearray()
-        self.reset_plugin_state()
+        self.plugins = []
+        self.shared_data = SimpleNamespace()
 
     def __iter__(self):
         return self
@@ -83,13 +84,16 @@ class IRCClient:
                         plugin, repr(msg),
                     )
 
-    def load_plugins(self, plugins, reload=False):
+    def load_plugins(self, plugins, old_data=None):
+        if old_data is None:
+            old_data = {}
+
         failed_plugins = []
 
         def load_plugins_helper():
             def load_or_reload(module):
                 import importlib
-                if reload:
+                if old_data:
                     return importlib.reload(importlib.import_module(module))
                 else:
                     return importlib.import_module(module)
@@ -107,6 +111,7 @@ class IRCClient:
                         plugin_class)(
                             config=plugin_config,
                             client=self,
+                            old_data=old_data.get(plugin_class),
                         )
                     yield plugin
                 except Exception:
@@ -124,6 +129,9 @@ class IRCClient:
             self.logger.warning("Failed plugins: %s", failed_plugins)
 
 
-    def reset_plugin_state(self):
+    def unload_plugins(self):
+        self.logger.info("Unloading plugins…")
+        old_data = vars(self.shared_data)
         self.plugins = []
         self.shared_data = SimpleNamespace()
+        return old_data
