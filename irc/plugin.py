@@ -2,9 +2,9 @@ import re
 
 from typing import TYPE_CHECKING, Dict, Any, Callable, Match
 if TYPE_CHECKING:
-    from irc.client import IRCClient
-    from irc.message import IRCMessage
-    import sqlite3
+    from irc.client import IRCClient    # noqa: F401
+    from irc.message import IRCMessage  # noqa: F401
+    import sqlite3                      # noqa: F401
 
 
 class IRCPlugin:
@@ -77,5 +77,11 @@ class IRCCommandPlugin(IRCPlugin):
                     sender = msg.sender.nick
                     command(sender, channel, match, msg)
 
-    def command(self, sender: str, channel: str, match: Match, msg: 'IRCMessage') -> None:
+    def command(
+            self,
+            sender: str,
+            channel: str,
+            match: Match,
+            msg: 'IRCMessage',
+    ) -> None:
         raise NotImplementedError()
