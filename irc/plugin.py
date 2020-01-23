@@ -1,8 +1,19 @@
 import re
 
+from typing import TYPE_CHECKING, Dict, Any, Callable, Match
+if TYPE_CHECKING:
+    from irc.client import IRCClient
+    from irc.message import IRCMessage
+    import sqlite3
+
 
 class IRCPlugin:
-    def __init__(self, client, config=None, old_data=None):
+    def __init__(
+            self,
+            client: 'IRCClient',
+            config: Dict,
+            old_data: Any = None,
+    ):
         self.client = client
         self.logger = self.client.logger.getChild(type(self).__name__)
         self.logger.info("Initalizing plugin.")
@@ -14,7 +25,7 @@ class IRCPlugin:
         else:
             self.shared_data = self._shared_data_init()
 
-    def react(self, msg):
+    def react(self, msg: 'IRCMessage'):
         """React to the received message in some way.
 
         If returns a true value, the message won't be processed by any
@@ -23,19 +34,19 @@ class IRCPlugin:
         """
         pass
 
-    def _shared_data_init(self):
+    def _shared_data_init(self) -> Any:
         """The initial value of IRCClient.shared_data.ThisPlugin"""
         return None
 
     @property
-    def shared_data(self):
+    def shared_data(self) -> Any:
         return getattr(
             self.client.shared_data,
             type(self).__name__,
         )
 
     @shared_data.setter
-    def shared_data(self, value):
+    def shared_data(self, value: Any) -> None:
         return setattr(
             self.client.shared_data,
             type(self).__name__,
@@ -43,16 +54,16 @@ class IRCPlugin:
         )
 
     @property
-    def db(self):
+    def db(self) -> 'sqlite3.Connection':
         return self.client.db
 
 
 class IRCCommandPlugin(IRCPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.commands = {}
+        self.commands: Dict[str, Callable] = {}
 
-    def react(self, msg):
+    def react(self, msg: 'IRCMessage'):
         super().react(msg)
 
         if msg.command == 'PRIVMSG':
@@ -63,5 +74,5 @@ class IRCCommandPlugin(IRCPlugin):
                     sender = msg.sender.nick
                     command(sender, channel, match, msg)
 
-    def command(self, sender, channel, match, msg):
+    def command(self, sender: str, channel: str, match: Match, msg: 'IRCMessage') -> None:
         raise NotImplementedError()

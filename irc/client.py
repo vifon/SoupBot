@@ -1,6 +1,6 @@
 from .message import IRCMessage
 from types import SimpleNamespace
-from typing import Dict, List, Any, Optional, NoReturn, Iterator
+from typing import Dict, List, Any, Iterator
 import logging
 import sqlite3
 import time
@@ -52,7 +52,7 @@ class IRCClient:
         self.logger.info(">>> %s", repr(msg))
         return IRCMessage.parse(msg)
 
-    def send(self, command: str, *args: List[str], body: Optional[str] = None, delay: int = 2):
+    def send(self, command: str, *args: str, body: str = None, delay: int = 2):
         msg = IRCMessage(command, *args, body=body)
         self.sendmsg(msg, delay)
 
@@ -81,7 +81,7 @@ class IRCClient:
                         plugin, repr(msg),
                     )
 
-    def load_plugins(self, plugins: List[str], old_data: Optional[Dict[str, Any]] = None):
+    def load_plugins(self, plugins: List[str], old_data: Dict[str, Any] = None):
         if old_data is None:
             old_data = {}
 
