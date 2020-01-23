@@ -113,7 +113,7 @@ class IRCClient:
                     yield plugin
                 except Exception:
                     self.logger.exception(
-                        "%s caused an exception during loading.", plugin
+                        "%s caused an exception during loading.", plugin_class
                     )
                     failed_plugins.append(plugin_class)
 
