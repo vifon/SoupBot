@@ -67,6 +67,9 @@ class IRCCommandPlugin(IRCPlugin):
         super().react(msg)
 
         if msg.command == 'PRIVMSG':
+            assert msg.body is not None
+            assert msg.sender is not None
+
             for command_re, command in self.commands.items():
                 match = re.match(command_re, msg.body)
                 if match:
