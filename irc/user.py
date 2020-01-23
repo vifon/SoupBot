@@ -1,19 +1,27 @@
 import re
 
+from typing import Iterator
+
 
 class ParseError(Exception):
     pass
 
 
 class IRCUser:
-    def __init__(self, nick, user=None, host=None, raw=None):
+    def __init__(
+            self,
+            nick,
+            user: str = None,
+            host: str = None,
+            raw: str = None
+    ):
         self.nick = nick
         self.user = user
         self.host = host
         self.raw = raw
 
     @classmethod
-    def parse(cls, userstr):
+    def parse(cls, userstr: str) -> 'IRCUser':
         match = re.match(
             r'''
             : (?P<nick> [^!]+)
@@ -39,8 +47,8 @@ class IRCUser:
         )
         return user
 
-    def __str__(self):
-        def parts():
+    def __str__(self) -> str:
+        def parts() -> Iterator[str]:
             yield f":{self.nick}"
             if self.user and self.host:
                 yield f"!{self.user}"

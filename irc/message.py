@@ -1,21 +1,30 @@
 from .user import IRCUser
 import re
 
+from typing import List, Optional, Iterator
+
 
 class ParseError(Exception):
     pass
 
 
 class IRCMessage:
-    def __init__(self, command, *args, sender=None, body=None, raw=None):
-        self.sender = sender
-        self.command = command
+    def __init__(
+            self,
+            command: str,
+            *args: str,
+            sender: IRCUser = None,
+            body: str = None,
+            raw: str = None
+    ):
+        self.command: str = command
         self.args = args
+        self.sender = sender
         self.body = body
         self.raw = raw
 
     @classmethod
-    def parse(cls, msgstr):
+    def parse(cls, msgstr: str) -> 'IRCMessage':
         match = re.match(
             r'''
             (?:
@@ -35,13 +44,13 @@ class IRCMessage:
 
         command = match.group('command')
 
-        sender = None
+        sender: Optional[IRCUser] = None
         sender_str = match.group('sender')
         if sender_str:
             sender = IRCUser.parse(sender_str)
 
-        args = []
-        body = None
+        args: List[str] = []
+        body: Optional[str] = None
         args_str = match.group('args')
         if args_str:
             try:
@@ -59,8 +68,8 @@ class IRCMessage:
         )
         return msg
 
-    def __str__(self):
-        def parts():
+    def __str__(self) -> str:
+        def parts() -> Iterator[str]:
             if self.sender:
                 yield str(self.sender)
 

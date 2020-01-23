@@ -1,5 +1,6 @@
 from .message import IRCMessage
 from types import SimpleNamespace
+from typing import Dict, List, Any, Iterator
 import logging
 import sqlite3
 import time
@@ -28,19 +29,19 @@ class IRCClient:
         self.plugins = []
         self.shared_data = SimpleNamespace()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[IRCMessage]:
         return self
 
-    def __next__(self):
+    def __next__(self) -> IRCMessage:
         return self.recv()
 
     @property
-    def nick(self):
+    def nick(self) -> str:
         # TODO: Return real nick when the nick collisions handling
         # gets implemented, not the one in the config.
         return self.config['nick']
 
-    def recv(self):
+    def recv(self) -> IRCMessage:
         separator = b"\r\n"
         separator_pos = self._buffer.find(separator)
         while separator_pos == -1:
@@ -51,11 +52,11 @@ class IRCClient:
         self.logger.info(">>> %s", repr(msg))
         return IRCMessage.parse(msg)
 
-    def send(self, command, *args, body=None, delay=2):
+    def send(self, command: str, *args: str, body: str = None, delay: int = 2):
         msg = IRCMessage(command, *args, body=body)
         self.sendmsg(msg, delay)
 
-    def sendmsg(self, msg, delay):
+    def sendmsg(self, msg: IRCMessage, delay: int):
         self.logger.info("<<< %s", msg)
         self.socket.send(f"{msg}\r\n".encode(self.encoding))
         time.sleep(delay)
@@ -80,7 +81,7 @@ class IRCClient:
                         plugin, repr(msg),
                     )
 
-    def load_plugins(self, plugins, old_data=None):
+    def load_plugins(self, plugins: List[str], old_data: Dict[str, Any] = None):
         if old_data is None:
             old_data = {}
 
@@ -125,7 +126,7 @@ class IRCClient:
             self.logger.warning("Failed plugins: %s", failed_plugins)
 
 
-    def unload_plugins(self):
+    def unload_plugins(self) -> Dict[str, Any]:
         self.logger.info("Unloading plugins…")
         old_data = vars(self.shared_data)
         self.plugins = []
