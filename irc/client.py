@@ -59,7 +59,7 @@ class IRCClient:
         msg = IRCMessage(command, *args, body=body)
         await self.sendmsg(msg, delay)
 
-    async def sendmsg(self, msg: IRCMessage, delay: int):
+    async def sendmsg(self, msg: IRCMessage, delay: int = 2):
         self.logger.info("<<< %s", msg)
         self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
         await self.socket.writer.drain()

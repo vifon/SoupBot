@@ -21,3 +21,5 @@ plugins:
         '#example':
           - example_user
           - vifontest
+  - irc.plugins.commandline.Commandline:
+      admin: vifon
