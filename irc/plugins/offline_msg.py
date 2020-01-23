@@ -23,12 +23,15 @@ class OfflineMessages(IRCPlugin):
 
     async def react(self, msg):
         if msg.command == 'PRIVMSG':
-            for user in map(re.escape, self.users):
+            channel = msg.args[0]
+            users = self.users.get(channel, [])
+            for user in map(re.escape, users):
                 if re.search(fr"\b{user}\b", msg.body):
                     await self.store_maybe(msg, user)
         elif msg.command == 'JOIN':
-            if msg.sender.nick in self.users:
-                channel = msg.args[0]
+            channel = msg.args[0]
+            users = self.users.get(channel, [])
+            if msg.sender.nick in users:
                 await self.dump(msg.sender.nick, channel)
 
     async def store_maybe(self, msg, recipient):

@@ -18,5 +18,6 @@ plugins:
         - bacon
   - irc.plugins.offline_msg.OfflineMessages:
       users:
-        - example_user
-        - vifontest
+        '#example':
+          - example_user
+          - vifontest
