@@ -15,14 +15,7 @@ class IRCMessage:
         self.raw = raw
 
     @classmethod
-    def unparsed(cls, msgstr):
-        msg = cls(None, raw=msgstr)
-        return msg
-
-    @classmethod
     def parse(cls, msgstr):
-        msg = cls(None, raw=msgstr)
-
         match = re.match(
             r'''
             (?:
@@ -40,25 +33,32 @@ class IRCMessage:
         if match is None:
             raise ParseError(msgstr)
 
+        command = match.group('command')
+
         sender = match.group('sender')
         if sender:
-            msg.sender = IRCUser.parse(sender)
+            sender = IRCUser.parse(sender)
         else:
-            msg.sender = None
-
-        msg.command = match.group('command')
+            sender = None
 
         args = match.group('args')
         if args:
             try:
-                args, msg.body = args.split(":", 1)
+                args, body = args.split(":", 1)
             except ValueError:
-                msg.body = None
-            msg.args = args.split()
+                body = None
+            args = args.split()
         else:
-            msg.args = []
-            msg.body = None
+            args = []
+            body = None
 
+        msg = cls(
+            command,
+            *args,
+            sender=sender,
+            body=body,
+            raw=msgstr,
+        )
         return msg
 
     def __str__(self):

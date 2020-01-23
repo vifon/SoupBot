@@ -1,4 +1,4 @@
-from .message import IRCMessage, ParseError
+from .message import IRCMessage
 from types import SimpleNamespace
 import logging
 import sqlite3
@@ -49,12 +49,7 @@ class IRCClient:
         msg = self._buffer[:separator_pos].decode(self.encoding)
         self._buffer = self._buffer[separator_pos+len(separator):]
         self.logger.info(">>> %s", repr(msg))
-
-        try:
-            return IRCMessage.parse(msg)
-        except ParseError:
-            self.logger.warning("Couldn't parse the message.")
-            return IRCMessage.unparsed(msg)
+        return IRCMessage.parse(msg)
 
     def send(self, command, *args, body=None, delay=2):
         msg = IRCMessage(command, *args, body=body)
