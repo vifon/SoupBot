@@ -75,7 +75,7 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
             '''
             CREATE TABLE IF NOT EXISTS score
             (
-                nick STRING,
+                nick STRING COLLATE NOCASE,
                 channel STRING,
                 score INTEGER,
                 UNIQUE(nick, channel)
@@ -112,7 +112,7 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
                 (?:{separator_re}|$)
                 ''',
                 msg.body,
-                flags=re.VERBOSE,
+                flags=(re.VERBOSE | re.IGNORECASE),
             )
             if match:
                 nick = match.group('nick1') or match.group('nick2')
