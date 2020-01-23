@@ -35,22 +35,20 @@ class IRCMessage:
 
         command = match.group('command')
 
-        sender = match.group('sender')
-        if sender:
-            sender = IRCUser.parse(sender)
-        else:
-            sender = None
+        sender = None
+        sender_str = match.group('sender')
+        if sender_str:
+            sender = IRCUser.parse(sender_str)
 
-        args = match.group('args')
-        if args:
+        args = []
+        body = None
+        args_str = match.group('args')
+        if args_str:
             try:
-                args, body = args.split(":", 1)
+                args_str, body = args_str.split(":", 1)
             except ValueError:
-                body = None
-            args = args.split()
-        else:
-            args = []
-            body = None
+                pass
+            args = args_str.split()
 
         msg = cls(
             command,
