@@ -67,9 +67,10 @@ class IRCClient:
 
     def greet(self):
         self.send(
-            "USER", self.config['nick'], "*", "*", body=self.config['name']
+            "USER", self.config['nick'], "*", "*", body=self.config['name'],
+            delay=0,
         )
-        self.send('NICK', self.config['nick'])
+        self.send('NICK', self.config['nick'], delay=0)
         # TODO: Handle nick collisions.
 
     def event_loop(self):
