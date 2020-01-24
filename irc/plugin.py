@@ -40,6 +40,8 @@ class IRCPlugin:
             self.logger.debug("Queue size: %d", self.queue.qsize())
             try:
                 await self.react(msg)
+            except asyncio.CancelledError:
+                raise
             except Exception:
                 self.logger.exception(
                     "%s caused an exception during processing: %s",
