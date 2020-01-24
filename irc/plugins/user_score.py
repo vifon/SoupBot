@@ -97,10 +97,7 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
             channel = msg.args[0]
             if not channel.startswith("#"):
                 return
-            names = await self.client.shared_data.NameTrack[channel].refresh_if_empty(
-                channel=channel,
-                client=self.client,
-            )
+            names = await self.client.shared_data.NameTrack[channel]
             scorables = itertools.chain(self.config['scorables'], names)
             name_re = "|".join(map(re.escape, scorables))
             operators = ["++", "--"]
