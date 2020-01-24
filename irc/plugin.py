@@ -41,12 +41,7 @@ class IRCPlugin:
             await self.react(msg)
 
     async def react(self, msg: 'IRCMessage'):
-        """React to the received message in some way.
-
-        If returns a true value, the message won't be processed by any
-        more plugins.
-
-        """
+        """React to the received message in some way."""
         pass
 
     def _shared_data_init(self) -> Any:
