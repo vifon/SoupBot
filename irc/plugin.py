@@ -38,7 +38,13 @@ class IRCPlugin:
             # Let other plugins run.
             await asyncio.sleep(0)
             self.logger.debug("Queue size: %d", self.queue.qsize())
-            await self.react(msg)
+            try:
+                await self.react(msg)
+            except Exception:
+                self.logger.exception(
+                    "%s caused an exception during processing: %s",
+                    self, repr(msg),
+                )
 
     async def react(self, msg: 'IRCMessage'):
         """React to the received message in some way."""
