@@ -43,21 +43,26 @@ async def run_bot():
     ))
     bot = IRCClient(socket, **conf['bot'])
 
+    reload_task = None
     async def reload_plugins():
         nonlocal conf
         conf = load_config(args.config_file)
 
-        nonlocal bot_loop
-        bot_loop.cancel()
+        nonlocal bot_task
+        bot_task.cancel()
         await bot.load_plugins(
             conf['plugins'],
             old_data=bot.unload_plugins()
         )
-        bot_loop = asyncio.ensure_future(bot.event_loop())
-        await bot_loop
+        bot_task = asyncio.ensure_future(bot.event_loop())
+
+    def schedule_reload_plugins():
+        nonlocal reload_task
+        reload_task = asyncio.ensure_future(asyncio.shield(reload_plugins()))
+
     asyncio.get_event_loop().add_signal_handler(
         signal.SIGUSR1,
-        lambda: asyncio.ensure_future(reload_plugins()),
+        schedule_reload_plugins,
     )
     logger.info(
         f"Use 'kill -SIGUSR1 {os.getpid()}' to reload all plugins."
@@ -65,8 +70,16 @@ async def run_bot():
 
     await bot.greet()
     await bot.load_plugins(conf['plugins'])
-    bot_loop = asyncio.ensure_future(bot.event_loop())
-    await bot_loop
+    bot_task = asyncio.ensure_future(bot.event_loop())
+    while True:
+        try:
+            await bot_task
+        except asyncio.CancelledError:
+            if reload_task is not None:
+                await reload_task
+                reload_task = None
+            else:
+                raise
 
 
 if __name__ == '__main__':
