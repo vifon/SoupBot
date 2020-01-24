@@ -46,10 +46,15 @@ async def run_bot():
     async def reload_plugins():
         nonlocal conf
         conf = load_config(args.config_file)
+
+        nonlocal bot_loop
+        bot_loop.cancel()
         await bot.load_plugins(
             conf['plugins'],
             old_data=bot.unload_plugins()
         )
+        bot_loop = asyncio.ensure_future(bot.event_loop())
+        await bot_loop
     asyncio.get_event_loop().add_signal_handler(
         signal.SIGUSR1,
         lambda: asyncio.ensure_future(reload_plugins()),
@@ -60,10 +65,15 @@ async def run_bot():
 
     await bot.greet()
     await bot.load_plugins(conf['plugins'])
-    await bot.event_loop()
+    bot_loop = asyncio.ensure_future(bot.event_loop())
+    await bot_loop
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_bot())
-    loop.close()
+    try:
+        asyncio.ensure_future(run_bot())
+        loop.run_forever()
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
