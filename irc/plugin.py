@@ -1,3 +1,4 @@
+import asyncio
 import re
 
 from typing import TYPE_CHECKING, Dict, Any, Callable, Match
@@ -18,6 +19,8 @@ class IRCPlugin:
         self.logger = self.client.logger.getChild(type(self).__name__)
         self.logger.info("Initalizing plugin.")
 
+        self.queue: asyncio.Queue['IRCMessage'] = asyncio.Queue()
+
         self.config = config or {}
 
         if old_data:
@@ -29,13 +32,24 @@ class IRCPlugin:
         """Called when all the plugins are already loaded."""
         pass
 
+    async def event_loop(self):
+        while True:
+            msg = await self.queue.get()
+            # Let other plugins run.
+            await asyncio.sleep(0)
+            self.logger.debug("Queue size: %d", self.queue.qsize())
+            try:
+                await self.react(msg)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self.logger.exception(
+                    "%s caused an exception during processing: %s",
+                    self, repr(msg),
+                )
+
     async def react(self, msg: 'IRCMessage'):
-        """React to the received message in some way.
-
-        If returns a true value, the message won't be processed by any
-        more plugins.
-
-        """
+        """React to the received message in some way."""
         pass
 
     def _shared_data_init(self) -> Any:
@@ -78,7 +92,7 @@ class IRCCommandPlugin(IRCPlugin):
                 match = re.match(command_re, msg.body)
                 if match:
                     channel = msg.args[0]
-                    sender = msg.sender.nick
+                    sender = msg.sender
                     await command(sender, channel, match, msg)
 
     async def command(

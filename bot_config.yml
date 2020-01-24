@@ -1,5 +1,6 @@
 server: irc.freenode.net
 port: 7000
+ssl: true
 
 bot:
   nick: Wydrek
@@ -13,13 +14,16 @@ plugins:
         - '#example'
   - irc.plugins.name_track.NameTrack
   - irc.plugins.user_score.UserScore:
-      admin: vifon
+      admin:
+        - "~vifon@example.com"
       scorables:
         - bacon
+      max_scoreboard_request: 10
   - irc.plugins.offline_msg.OfflineMessages:
       users:
         '#example':
           - example_user
           - vifontest
   - irc.plugins.commandline.Commandline:
-      admin: vifon
+      admin:
+        - "~vifon@example.com"

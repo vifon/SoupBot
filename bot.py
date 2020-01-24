@@ -10,7 +10,7 @@ import signal
 import yaml
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
     datefmt="%H:%M"
 )
@@ -24,7 +24,7 @@ def load_config(path):
 def live_debug(*ignore):
     import pdb
     pdb.set_trace()
-signal.signal(signal.SIGUSR2, live_debug)
+signal.signal(signal.SIGUSR2, live_debug)  # noqa: E305
 
 
 Socket = namedtuple('Socket', ('reader', 'writer'))
@@ -38,21 +38,31 @@ async def run_bot():
     conf = load_config(args.config_file)
     hostname = conf['server']
     port = conf['port']
-    socket = Socket(*await asyncio.open_connection(
-        hostname, port, ssl=True
-    ))
+    ssl = conf.get('ssl', True)
+    socket = Socket(*await asyncio.open_connection(hostname, port, ssl=ssl))
     bot = IRCClient(socket, **conf['bot'])
+
+    reload_task = None
 
     async def reload_plugins():
         nonlocal conf
         conf = load_config(args.config_file)
+
+        nonlocal bot_task
+        bot_task.cancel()
         await bot.load_plugins(
             conf['plugins'],
             old_data=bot.unload_plugins()
         )
+        bot_task = asyncio.ensure_future(bot.event_loop())
+
+    def schedule_reload_plugins():
+        nonlocal reload_task
+        reload_task = asyncio.ensure_future(asyncio.shield(reload_plugins()))
+
     asyncio.get_event_loop().add_signal_handler(
         signal.SIGUSR1,
-        lambda: asyncio.ensure_future(reload_plugins()),
+        schedule_reload_plugins,
     )
     logger.info(
         f"Use 'kill -SIGUSR1 {os.getpid()}' to reload all plugins."
@@ -60,10 +70,28 @@ async def run_bot():
 
     await bot.greet()
     await bot.load_plugins(conf['plugins'])
-    await bot.event_loop()
+    bot_task = asyncio.ensure_future(bot.event_loop())
+    while True:
+        try:
+            await bot_task
+        except asyncio.CancelledError:
+            if reload_task is not None:
+                await reload_task
+                reload_task = None
+            else:
+                raise
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_bot())
-    loop.close()
+    try:
+        bot_task = asyncio.ensure_future(run_bot())
+        loop.run_forever()
+    finally:
+        bot_task.cancel()
+        try:
+            loop.run_until_complete(bot_task)
+        except asyncio.CancelledError:
+            pass
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()

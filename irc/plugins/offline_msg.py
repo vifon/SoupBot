@@ -41,10 +41,7 @@ class OfflineMessages(IRCPlugin):
             # the bot.  It was also a possible DoS attack.
             return
         try:
-            names = await self.client.shared_data.NameTrack[channel].refresh_if_empty(
-                channel=channel,
-                client=self.client,
-            )
+            names = await self.client.shared_data.NameTrack[channel]
         except AttributeError:
             # Fall back to manual querying if the NameTrack plugin
             # isn't loaded.

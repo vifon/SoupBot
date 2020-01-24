@@ -1,23 +1,25 @@
 from .message import IRCMessage
 from types import SimpleNamespace
-from typing import Dict, List, Any, Iterator
 import asyncio
 import logging
 import sqlite3
-import time
 logger = logging.getLogger(__name__)
+
+from typing import TYPE_CHECKING, Dict, List, Any  # noqa: F402
+if TYPE_CHECKING:
+    from .plugin import IRCPlugin  # noqa: F401
 
 
 class IRCClient:
     def __init__(
             self,
             socket,
-            encoding='utf-8',
-            sqlite_db=':memory:',
-            **config,
+            encoding: str = 'utf-8',
+            sqlite_db: str = ':memory:',
+            **config: Any,
     ):
         self.socket = socket
-        self.incoming_queue = asyncio.Queue()
+        self.incoming_queue: asyncio.Queue[IRCMessage] = asyncio.Queue()
         self.encoding = encoding
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
@@ -25,26 +27,18 @@ class IRCClient:
             sqlite_db,
             detect_types=sqlite3.PARSE_DECLTYPES,
         )
+        self.nick = self.config['nick']
         self._buffer = bytearray()
-        self.plugins = []
+        self.plugins: List['IRCPlugin'] = []
         self.shared_data = SimpleNamespace()
 
     def __aiter__(self):
         return self
 
     async def __anext__(self) -> IRCMessage:
-        return await self._recv()
-
-    @property
-    def nick(self) -> str:
-        # TODO: Return real nick when the nick collisions handling
-        # gets implemented, not the one in the config.
-        return self.config['nick']
+        return await self.recv()
 
     async def recv(self) -> IRCMessage:
-        return await self.incoming_queue.get()
-
-    async def _recv(self) -> IRCMessage:
         separator = b"\r\n"
         separator_pos = self._buffer.find(separator)
         while separator_pos == -1:
@@ -55,7 +49,13 @@ class IRCClient:
         self.logger.info(">>> %s", repr(msg))
         return IRCMessage.parse(msg)
 
-    async def send(self, command: str, *args: str, body: str = None, delay: int = 2):
+    async def send(
+            self,
+            command: str,
+            *args: str,
+            body: str = None,
+            delay: int = 2,
+    ):
         msg = IRCMessage(command, *args, body=body)
         await self.sendmsg(msg, delay)
 
@@ -67,25 +67,47 @@ class IRCClient:
 
     async def greet(self):
         await self.send(
-            "USER", self.config['nick'], "*", "*", body=self.config['name'],
+            "USER", self.nick, "*", "*", body=self.config['name'],
             delay=0,
         )
-        await self.send('NICK', self.config['nick'], delay=0)
-        # TODO: Handle nick collisions.
+        await self.send('NICK', self.nick, delay=0)
+        async for msg in self:
+            if msg.command == '433':  # ERR_NICKNAMEINUSE
+                self.nick += "_"
+                await self.send('NICK', self.nick, delay=0)
+            if msg.command == '001':  # RPL_WELCOME
+                break
 
-    async def event_loop(self):
+    def event_loop(self):
         async def irc_reader():
             async for msg in self:
                 await self.incoming_queue.put(msg)
 
-        async def plugin_caller():
+        async def plugin_relay():
             while True:
-                msg = await self.recv()
-                await asyncio.gather(*(plugin.react(msg) for plugin in self.plugins))
+                msg = await self.incoming_queue.get()
+                self.logger.debug(
+                    "Queue size: %d", self.incoming_queue.qsize()
+                )
+                for plugin in self.plugins:
+                    await plugin.queue.put(msg)
 
-        await asyncio.gather(irc_reader(), plugin_caller())
+        def plugin_runner():
+            return asyncio.gather(
+                *(plugin.event_loop() for plugin in self.plugins)
+            )
 
-    async def load_plugins(self, plugins: List[str], old_data: Dict[str, Any] = None):
+        return asyncio.gather(
+            irc_reader(),
+            plugin_relay(),
+            plugin_runner(),
+        )
+
+    async def load_plugins(
+            self,
+            plugins: List[str],
+            old_data: Dict[str, Any] = None,
+    ):
         if old_data is None:
             old_data = {}
 
@@ -101,7 +123,8 @@ class IRCClient:
 
             for plugin_name in plugins:
                 if isinstance(plugin_name, dict):
-                    plugin_name, plugin_config = next(iter(plugin_name.items()))
+                    plugin_name, plugin_config = \
+                        next(iter(plugin_name.items()))
                 else:
                     plugin_config = None
 
