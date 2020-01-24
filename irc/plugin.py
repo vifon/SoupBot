@@ -19,7 +19,7 @@ class IRCPlugin:
         self.logger = self.client.logger.getChild(type(self).__name__)
         self.logger.info("Initalizing plugin.")
 
-        self.queue = asyncio.Queue()
+        self.queue: asyncio.Queue['IRCMessage'] = asyncio.Queue()
 
         self.config = config or {}
 

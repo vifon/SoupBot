@@ -1,23 +1,26 @@
 from .message import IRCMessage
 from types import SimpleNamespace
-from typing import Dict, List, Any, Iterator
 import asyncio
 import logging
 import sqlite3
 import time
 logger = logging.getLogger(__name__)
 
+from typing import TYPE_CHECKING, Dict, List, Any, Iterator
+if TYPE_CHECKING:
+    from .plugin import IRCPlugin
+
 
 class IRCClient:
     def __init__(
             self,
             socket,
-            encoding='utf-8',
-            sqlite_db=':memory:',
-            **config,
+            encoding: str = 'utf-8',
+            sqlite_db: str = ':memory:',
+            **config: Any,
     ):
         self.socket = socket
-        self.incoming_queue = asyncio.Queue()
+        self.incoming_queue: asyncio.Queue[IRCMessage] = asyncio.Queue()
         self.encoding = encoding
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
@@ -26,7 +29,7 @@ class IRCClient:
             detect_types=sqlite3.PARSE_DECLTYPES,
         )
         self._buffer = bytearray()
-        self.plugins = []
+        self.plugins: List['IRCPlugin'] = []
         self.shared_data = SimpleNamespace()
 
     def __aiter__(self):
