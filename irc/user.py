@@ -49,12 +49,15 @@ class IRCUser:
 
     @property
     def identity(self):
-        return f"{self.user}@{self.host}"
+        if self.user and self.host:
+            return f"{self.user}@{self.host}"
+        else:
+            return None
 
     def __str__(self) -> str:
         def parts() -> Iterator[str]:
             yield f":{self.nick}"
-            if self.user and self.host:
+            if self.identity:
                 yield f"!{self.identity}"
 
         return "".join(parts())
