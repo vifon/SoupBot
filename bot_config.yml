@@ -17,6 +17,7 @@ plugins:
         - "~vifon@example.com"
       scorables:
         - bacon
+      max_scoreboard_request: 10
   - irc.plugins.offline_msg.OfflineMessages:
       users:
         '#example':
