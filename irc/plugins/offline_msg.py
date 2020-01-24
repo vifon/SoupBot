@@ -21,29 +21,33 @@ class OfflineMessages(IRCPlugin):
             '''
         )
 
-    def react(self, msg):
+    async def react(self, msg):
         if msg.command == 'PRIVMSG':
-            for user in map(re.escape, self.users):
+            channel = msg.args[0]
+            users = self.users.get(channel, [])
+            for user in map(re.escape, users):
                 if re.search(fr"\b{user}\b", msg.body):
-                    self.store_maybe(msg, user)
+                    await self.store_maybe(msg, user)
         elif msg.command == 'JOIN':
-            if msg.sender.nick in self.users:
-                channel = msg.args[0]
-                self.dump(msg.sender.nick, channel)
+            channel = msg.args[0]
+            users = self.users.get(channel, [])
+            if msg.sender.nick in users:
+                await self.dump(msg.sender.nick, channel)
 
-    def store_maybe(self, msg, recipient):
+    async def store_maybe(self, msg, recipient):
         channel = msg.args[0]
         if not channel.startswith("#"):
             # It doesn't make sense to store messages sent directly to
             # the bot.  It was also a possible DoS attack.
             return
         try:
-            names = self.client.shared_data.NameTrack[channel]
+            names = await self.client.shared_data.NameTrack[channel]
         except AttributeError:
             # Fall back to manual querying if the NameTrack plugin
             # isn't loaded.
-            self.client.send('NAMES', channel)
-            names = (nick.lstrip("@+") for nick in self.client.recv().body.split())
+            await self.client.send('NAMES', channel)
+            response = await self.client.recv()
+            names = (nick.lstrip("@+") for nick in response.body.split())
         if recipient in names:
             self.logger.info("Not saving, user present.")
         else:
@@ -63,7 +67,7 @@ class OfflineMessages(IRCPlugin):
         self.db.commit()
         self.logger.info("Storing %s for %s", repr(msg.body), recipient)
 
-    def dump(self, recipient, channel):
+    async def dump(self, recipient, channel):
         c = self.db.cursor()
 
         c.execute(
@@ -85,7 +89,7 @@ class OfflineMessages(IRCPlugin):
             (channel, recipient)
         )
         for timestamp, sender, body in c:
-            self.client.send(
+            await self.client.send(
                 'PRIVMSG',
                 channel,
                 body="{time} <{sender}> {body}".format(

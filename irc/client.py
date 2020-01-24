@@ -1,23 +1,25 @@
 from .message import IRCMessage
 from types import SimpleNamespace
-from typing import Dict, List, Any, Iterator
+import asyncio
 import logging
 import sqlite3
-import time
 logger = logging.getLogger(__name__)
+
+from typing import TYPE_CHECKING, Dict, List, Any  # noqa: F402
+if TYPE_CHECKING:
+    from .plugin import IRCPlugin  # noqa: F401
 
 
 class IRCClient:
     def __init__(
             self,
             socket,
-            buffer_size=2048,
-            encoding='utf-8',
-            sqlite_db=':memory:',
-            **config,
+            encoding: str = 'utf-8',
+            sqlite_db: str = ':memory:',
+            **config: Any,
     ):
         self.socket = socket
-        self.buffer_size = buffer_size
+        self.incoming_queue: asyncio.Queue[IRCMessage] = asyncio.Queue()
         self.encoding = encoding
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
@@ -25,63 +27,87 @@ class IRCClient:
             sqlite_db,
             detect_types=sqlite3.PARSE_DECLTYPES,
         )
+        self.nick = self.config['nick']
         self._buffer = bytearray()
-        self.plugins = []
+        self.plugins: List['IRCPlugin'] = []
         self.shared_data = SimpleNamespace()
 
-    def __iter__(self) -> Iterator[IRCMessage]:
+    def __aiter__(self):
         return self
 
-    def __next__(self) -> IRCMessage:
-        return self.recv()
+    async def __anext__(self) -> IRCMessage:
+        return await self.recv()
 
-    @property
-    def nick(self) -> str:
-        # TODO: Return real nick when the nick collisions handling
-        # gets implemented, not the one in the config.
-        return self.config['nick']
-
-    def recv(self) -> IRCMessage:
+    async def recv(self) -> IRCMessage:
         separator = b"\r\n"
         separator_pos = self._buffer.find(separator)
         while separator_pos == -1:
-            self._buffer.extend(self.socket.recv(self.buffer_size))
+            self._buffer.extend(await self.socket.reader.read(512))
             separator_pos = self._buffer.find(separator)
         msg = self._buffer[:separator_pos].decode(self.encoding)
         self._buffer = self._buffer[separator_pos+len(separator):]
         self.logger.info(">>> %s", repr(msg))
         return IRCMessage.parse(msg)
 
-    def send(self, command: str, *args: str, body: str = None, delay: int = 2):
+    async def send(
+            self,
+            command: str,
+            *args: str,
+            body: str = None,
+            delay: int = 2,
+    ):
         msg = IRCMessage(command, *args, body=body)
-        self.sendmsg(msg, delay)
+        await self.sendmsg(msg, delay)
 
-    def sendmsg(self, msg: IRCMessage, delay: int):
+    async def sendmsg(self, msg: IRCMessage, delay: int = 2):
         self.logger.info("<<< %s", msg)
-        self.socket.send(f"{msg}\r\n".encode(self.encoding))
-        time.sleep(delay)
+        self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
+        await self.socket.writer.drain()
+        await asyncio.sleep(delay)
 
-    def greet(self):
-        self.send(
-            "USER", self.config['nick'], "*", "*", body=self.config['name'],
+    async def greet(self):
+        await self.send(
+            "USER", self.nick, "*", "*", body=self.config['name'],
             delay=0,
         )
-        self.send('NICK', self.config['nick'], delay=0)
-        # TODO: Handle nick collisions.
+        await self.send('NICK', self.nick, delay=0)
+        async for msg in self:
+            if msg.command == '433':  # ERR_NICKNAMEINUSE
+                self.nick += "_"
+                await self.send('NICK', self.nick, delay=0)
+            if msg.command == '001':  # RPL_WELCOME
+                break
 
     def event_loop(self):
-        for msg in self:
-            for plugin in self.plugins:
-                try:
-                    if plugin.react(msg):
-                        break
-                except Exception:
-                    self.logger.exception(
-                        "%s caused an exception during processing: %s",
-                        plugin, repr(msg),
-                    )
+        async def irc_reader():
+            async for msg in self:
+                await self.incoming_queue.put(msg)
 
-    def load_plugins(self, plugins: List[str], old_data: Dict[str, Any] = None):
+        async def plugin_relay():
+            while True:
+                msg = await self.incoming_queue.get()
+                self.logger.debug(
+                    "Queue size: %d", self.incoming_queue.qsize()
+                )
+                for plugin in self.plugins:
+                    await plugin.queue.put(msg)
+
+        def plugin_runner():
+            return asyncio.gather(
+                *(plugin.event_loop() for plugin in self.plugins)
+            )
+
+        return asyncio.gather(
+            irc_reader(),
+            plugin_relay(),
+            plugin_runner(),
+        )
+
+    async def load_plugins(
+            self,
+            plugins: List[str],
+            old_data: Dict[str, Any] = None,
+    ):
         if old_data is None:
             old_data = {}
 
@@ -97,7 +123,8 @@ class IRCClient:
 
             for plugin_name in plugins:
                 if isinstance(plugin_name, dict):
-                    plugin_name, plugin_config = next(iter(plugin_name.items()))
+                    plugin_name, plugin_config = \
+                        next(iter(plugin_name.items()))
                 else:
                     plugin_config = None
 
@@ -124,7 +151,8 @@ class IRCClient:
         )
         if failed_plugins:
             self.logger.warning("Failed plugins: %s", failed_plugins)
-
+        for plugin in self.plugins:
+            await plugin.start()
 
     def unload_plugins(self) -> Dict[str, Any]:
         self.logger.info("Unloading plugins…")

@@ -11,17 +11,24 @@ class UserScoreQueryMixin(IRCCommandPlugin):
             r'\.scores(?: +([0-9]+))?$': self.__list_scores,
         })
 
-    def __show_score(self, sender, channel, match, msg):
+    async def __show_score(self, sender, channel, match, msg):
         scorable = match[1]
         score = self.score(scorable, channel)
         if score is None:
             body = f"{scorable} has no score."
         else:
             body = f"{scorable}'s score is {score}."
-        self.client.send('PRIVMSG', channel, body=body)
+        await self.client.send('PRIVMSG', channel, body=body)
 
-    def __list_scores(self, sender, channel, match, msg):
-        count = match[1] or 5
+    async def __list_scores(self, sender, channel, match, msg):
+        count = int(match[1] or 5)
+        max_request = self.config['max_scoreboard_request'] or 10
+        if count > max_request and sender.identity not in self.config['admin']:
+            await self.client.send(
+                'PRIVMSG', channel,
+                body=f"{sender.nick}: Too many scores requested."
+            )
+            return
         c = self.db.cursor()
         c.execute(
             '''
@@ -30,13 +37,13 @@ class UserScoreQueryMixin(IRCCommandPlugin):
             ORDER BY score DESC
             LIMIT ?
             ''',
-            (channel, int(count))
+            (channel, count)
         )
         for nick, score in c:
-            self.client.send(
+            await self.client.send(
                 'PRIVMSG', channel, body=f"{nick}'s score is {score}."
             )
-        self.client.send(
+        await self.client.send(
             'PRIVMSG', channel, body="End of scores."
         )
 
@@ -48,8 +55,8 @@ class UserScoreEraseMixin(IRCCommandPlugin):
             r'\.descore +(\w+)': self.__erase_scores,
         })
 
-    def __erase_scores(self, sender, channel, match, msg):
-        if sender != self.config.get('admin'):
+    async def __erase_scores(self, sender, channel, match, msg):
+        if sender.identity not in self.config.get('admin'):
             return
 
         nick = match[1]
@@ -62,7 +69,7 @@ class UserScoreEraseMixin(IRCCommandPlugin):
             (nick, channel,)
         )
         self.db.commit()
-        self.client.send(
+        await self.client.send(
             'PRIVMSG', channel, body=f"{nick}'s score erased."
         )
 
@@ -75,7 +82,7 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
             '''
             CREATE TABLE IF NOT EXISTS score
             (
-                nick STRING,
+                nick STRING COLLATE NOCASE,
                 channel STRING,
                 score INTEGER,
                 UNIQUE(nick, channel)
@@ -83,14 +90,14 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
             '''
         )
 
-    def react(self, msg):
-        super().react(msg)
+    async def react(self, msg):
+        await super().react(msg)
 
         if msg.command == 'PRIVMSG':
             channel = msg.args[0]
             if not channel.startswith("#"):
                 return
-            names = self.client.shared_data.NameTrack[channel]
+            names = await self.client.shared_data.NameTrack[channel]
             scorables = itertools.chain(self.config['scorables'], names)
             name_re = "|".join(map(re.escape, scorables))
             operators = ["++", "--"]
@@ -109,16 +116,19 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
                 (?:{separator_re}|$)
                 ''',
                 msg.body,
-                flags=re.VERBOSE,
+                flags=(re.VERBOSE | re.IGNORECASE),
             )
             if match:
                 nick = match.group('nick1') or match.group('nick2')
                 op = match.group('op1') or match.group('op2')
-                self.respond_score(msg.sender.nick, nick, channel, op)
+                await self.respond_score(msg.sender.nick, nick, channel, op)
 
-    def respond_score(self, sender, nick, channel, operator):
+    async def respond_score(self, sender, nick, channel, operator):
         if sender == nick:
-            self.client.send('PRIVMSG', channel, body=f"{sender}: No self-scoring!")
+            await self.client.send(
+                'PRIVMSG', channel,
+                body=f"{sender}: No self-scoring!"
+            )
             return
 
         value_map = {
@@ -128,7 +138,10 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
         change = value_map[operator]
         self.change_score(nick, channel, change)
         score = self.score(nick, channel) or 0
-        self.client.send('PRIVMSG', channel, body=f"{nick}'s score is now {score}.")
+        await self.client.send(
+            'PRIVMSG', channel,
+            body=f"{nick}'s score is now {score}."
+        )
 
     def score(self, nick, channel):
         c = self.db.cursor()

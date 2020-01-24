@@ -1,5 +1,6 @@
 from collections import defaultdict
 from irc.plugin import IRCPlugin
+import asyncio
 
 
 # Source: https://stackoverflow.com/a/2912455
@@ -13,41 +14,41 @@ class defaultdict_with_key(defaultdict):
 
 
 class NameTrack(IRCPlugin):
-    def react(self, msg):
-        def JOIN(msg):
+    async def react(self, msg):
+        async def JOIN(msg):
             channel = msg.args[0]
             nick = msg.sender.nick
-            self.acknowledge(channel, nick)
+            await self.acknowledge(channel, nick)
 
-        def PART(msg):
+        async def PART(msg):
             channel = msg.args[0]
             nick = msg.sender.nick
-            self.forget(channel, nick)
+            await self.forget(channel, nick)
 
-        def QUIT(msg):
+        async def QUIT(msg):
             nick = msg.sender.nick
             for channel, nicks in self.shared_data.items():
                 if nick in nicks:
-                    self.forget(channel, nick)
+                    await self.forget(channel, nick)
 
-        def KICK(msg):
+        async def KICK(msg):
             channel, nick = msg.args
-            self.forget(channel, nick)
+            await self.forget(channel, nick)
 
-        def NICK(msg):
+        async def NICK(msg):
             old_nick = msg.sender.nick
             new_nick = msg.args[0]
             self.rename(old_nick, new_nick)
 
         if msg.command in ('JOIN', 'PART', 'QUIT', 'KICK', 'NICK'):
-            locals()[msg.command](msg)
+            await locals()[msg.command](msg)
 
-    def query_names(self, channel):
+    async def query_names(self, channel):
         self.logger.info("No cached names for %s, querying…", channel)
-        self.client.send('NAMES', channel)
+        await self.client.send('NAMES', channel)
         names = set()
         while True:
-            response = self.client.recv()
+            response = await self.queue.get()
             if response.command == "366":  # RPL_ENDOFNAMES
                 break
             if response.command == "353":  # RPL_NAMREPLY
@@ -59,13 +60,15 @@ class NameTrack(IRCPlugin):
         self.logger.info("Nicks on %s: %s", channel, names)
         return names
 
-    def acknowledge(self, channel, nick):
+    async def acknowledge(self, channel, nick):
         self.logger.info("%s joined %s, acknowledging…", nick, channel)
-        self.shared_data[channel].add(nick)
+        names = await self.shared_data[channel]
+        names.add(nick)
 
-    def forget(self, channel, nick):
+    async def forget(self, channel, nick):
         self.logger.info("%s left %s, forgetting…", nick, channel)
-        self.shared_data[channel].discard(nick)
+        names = await self.shared_data[channel]
+        names.discard(nick)
 
     def rename(self, old_nick, new_nick):
         for channel, nicks in self.shared_data.items():
@@ -78,4 +81,6 @@ class NameTrack(IRCPlugin):
                 nicks.add(new_nick)
 
     def _shared_data_init(self):
-        return defaultdict_with_key(self.query_names)
+        def factory(channel):
+            return asyncio.ensure_future(self.query_names(channel))
+        return defaultdict_with_key(factory)
