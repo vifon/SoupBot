@@ -1,18 +1,20 @@
 from collections import defaultdict
 from irc.plugin import IRCPlugin
+import asyncio
 
 
 class NameSet(set):
-    def __init__(self, logger, *args, **kwargs):
+    def __init__(self, logger, queue, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logger.getChild(type(self).__name__)
+        self.queue = queue
 
     async def refresh_if_empty(self, channel, client):
         if not self:
             self.logger.info("No cached names for %s, querying…", channel)
             await client.send('NAMES', channel)
             while True:
-                response = await client.recv()
+                response = await self.queue.get()
                 if response.command == "366":  # RPL_ENDOFNAMES
                     break
                 if response.command == "353":  # RPL_NAMREPLY
@@ -83,5 +85,8 @@ class NameTrack(IRCPlugin):
 
     def _shared_data_init(self):
         def factory():
-            return NameSet(logger=self.logger)
+            return NameSet(
+                logger=self.logger,
+                queue=self.queue,
+            )
         return defaultdict(factory)

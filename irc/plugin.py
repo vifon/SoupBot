@@ -1,3 +1,4 @@
+import asyncio
 import re
 
 from typing import TYPE_CHECKING, Dict, Any, Callable, Match
@@ -18,6 +19,8 @@ class IRCPlugin:
         self.logger = self.client.logger.getChild(type(self).__name__)
         self.logger.info("Initalizing plugin.")
 
+        self.queue = asyncio.Queue()
+
         self.config = config or {}
 
         if old_data:
@@ -28,6 +31,14 @@ class IRCPlugin:
     async def start(self) -> None:
         """Called when all the plugins are already loaded."""
         pass
+
+    async def event_loop(self):
+        while True:
+            msg = await self.queue.get()
+            # Let other plugins run.
+            await asyncio.sleep(0)
+            self.logger.debug("Queue size: %d", self.queue.qsize())
+            await self.react(msg)
 
     async def react(self, msg: 'IRCMessage'):
         """React to the received message in some way.

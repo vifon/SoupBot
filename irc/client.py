@@ -33,7 +33,7 @@ class IRCClient:
         return self
 
     async def __anext__(self) -> IRCMessage:
-        return await self._recv()
+        return await self.recv()
 
     @property
     def nick(self) -> str:
@@ -42,9 +42,6 @@ class IRCClient:
         return self.config['nick']
 
     async def recv(self) -> IRCMessage:
-        return await self.incoming_queue.get()
-
-    async def _recv(self) -> IRCMessage:
         separator = b"\r\n"
         separator_pos = self._buffer.find(separator)
         while separator_pos == -1:
@@ -78,12 +75,23 @@ class IRCClient:
             async for msg in self:
                 await self.incoming_queue.put(msg)
 
-        async def plugin_caller():
+        async def plugin_relay():
             while True:
-                msg = await self.recv()
-                await asyncio.gather(*(plugin.react(msg) for plugin in self.plugins))
+                msg = await self.incoming_queue.get()
+                self.logger.debug("Queue size: %d", self.incoming_queue.qsize())
+                for plugin in self.plugins:
+                    await plugin.queue.put(msg)
 
-        await asyncio.gather(irc_reader(), plugin_caller())
+        async def plugin_runner():
+            await asyncio.gather(
+                *(plugin.event_loop() for plugin in self.plugins)
+            )
+
+        await asyncio.gather(
+            irc_reader(),
+            plugin_relay(),
+            plugin_runner(),
+        )
 
     async def load_plugins(self, plugins: List[str], old_data: Dict[str, Any] = None):
         if old_data is None:
