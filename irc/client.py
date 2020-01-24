@@ -28,6 +28,7 @@ class IRCClient:
             sqlite_db,
             detect_types=sqlite3.PARSE_DECLTYPES,
         )
+        self.nick = self.config['nick']
         self._buffer = bytearray()
         self.plugins: List['IRCPlugin'] = []
         self.shared_data = SimpleNamespace()
@@ -37,12 +38,6 @@ class IRCClient:
 
     async def __anext__(self) -> IRCMessage:
         return await self.recv()
-
-    @property
-    def nick(self) -> str:
-        # TODO: Return real nick when the nick collisions handling
-        # gets implemented, not the one in the config.
-        return self.config['nick']
 
     async def recv(self) -> IRCMessage:
         separator = b"\r\n"
@@ -67,11 +62,16 @@ class IRCClient:
 
     async def greet(self):
         await self.send(
-            "USER", self.config['nick'], "*", "*", body=self.config['name'],
+            "USER", self.nick, "*", "*", body=self.config['name'],
             delay=0,
         )
-        await self.send('NICK', self.config['nick'], delay=0)
-        # TODO: Handle nick collisions.
+        await self.send('NICK', self.nick, delay=0)
+        async for msg in self:
+            if msg.command == '433':  # ERR_NICKNAMEINUSE
+                self.nick += "_"
+                await self.send('NICK', self.nick, delay=0)
+            if msg.command == '001':  # RPL_WELCOME
+                break
 
     def event_loop(self):
         async def irc_reader():
