@@ -13,7 +13,8 @@ plugins:
         - '#example'
   - irc.plugins.name_track.NameTrack
   - irc.plugins.user_score.UserScore:
-      admin: "~vifon@example.com"
+      admin:
+        - "~vifon@example.com"
       scorables:
         - bacon
   - irc.plugins.offline_msg.OfflineMessages:
@@ -22,4 +23,5 @@ plugins:
           - example_user
           - vifontest
   - irc.plugins.commandline.Commandline:
-      admin: "~vifon@example.com"
+      admin:
+        - "~vifon@example.com"
