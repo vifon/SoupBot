@@ -73,7 +73,7 @@ class IRCClient:
         await self.send('NICK', self.config['nick'], delay=0)
         # TODO: Handle nick collisions.
 
-    async def event_loop(self):
+    def event_loop(self):
         async def irc_reader():
             async for msg in self:
                 await self.incoming_queue.put(msg)
@@ -85,12 +85,12 @@ class IRCClient:
                 for plugin in self.plugins:
                     await plugin.queue.put(msg)
 
-        async def plugin_runner():
-            await asyncio.gather(
+        def plugin_runner():
+            return asyncio.gather(
                 *(plugin.event_loop() for plugin in self.plugins)
             )
 
-        await asyncio.gather(
+        return asyncio.gather(
             irc_reader(),
             plugin_relay(),
             plugin_runner(),
