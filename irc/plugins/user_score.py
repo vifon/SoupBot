@@ -49,7 +49,7 @@ class UserScoreEraseMixin(IRCCommandPlugin):
         })
 
     async def __erase_scores(self, sender, channel, match, msg):
-        if sender != self.config.get('admin'):
+        if sender.identity != self.config.get('admin'):
             return
 
         nick = match[1]

@@ -84,7 +84,7 @@ class IRCCommandPlugin(IRCPlugin):
                 match = re.match(command_re, msg.body)
                 if match:
                     channel = msg.args[0]
-                    sender = msg.sender.nick
+                    sender = msg.sender
                     await command(sender, channel, match, msg)
 
     async def command(
