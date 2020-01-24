@@ -125,7 +125,10 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
 
     async def respond_score(self, sender, nick, channel, operator):
         if sender == nick:
-            await self.client.send('PRIVMSG', channel, body=f"{sender}: No self-scoring!")
+            await self.client.send(
+                'PRIVMSG', channel,
+                body=f"{sender}: No self-scoring!"
+            )
             return
 
         value_map = {
@@ -135,7 +138,10 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
         change = value_map[operator]
         self.change_score(nick, channel, change)
         score = self.score(nick, channel) or 0
-        await self.client.send('PRIVMSG', channel, body=f"{nick}'s score is now {score}.")
+        await self.client.send(
+            'PRIVMSG', channel,
+            body=f"{nick}'s score is now {score}."
+        )
 
     def score(self, nick, channel):
         c = self.db.cursor()

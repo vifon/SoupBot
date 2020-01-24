@@ -3,12 +3,11 @@ from types import SimpleNamespace
 import asyncio
 import logging
 import sqlite3
-import time
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING, Dict, List, Any, Iterator
+from typing import TYPE_CHECKING, Dict, List, Any  # noqa: F402
 if TYPE_CHECKING:
-    from .plugin import IRCPlugin
+    from .plugin import IRCPlugin  # noqa: F401
 
 
 class IRCClient:
@@ -50,7 +49,13 @@ class IRCClient:
         self.logger.info(">>> %s", repr(msg))
         return IRCMessage.parse(msg)
 
-    async def send(self, command: str, *args: str, body: str = None, delay: int = 2):
+    async def send(
+            self,
+            command: str,
+            *args: str,
+            body: str = None,
+            delay: int = 2,
+    ):
         msg = IRCMessage(command, *args, body=body)
         await self.sendmsg(msg, delay)
 
@@ -81,7 +86,9 @@ class IRCClient:
         async def plugin_relay():
             while True:
                 msg = await self.incoming_queue.get()
-                self.logger.debug("Queue size: %d", self.incoming_queue.qsize())
+                self.logger.debug(
+                    "Queue size: %d", self.incoming_queue.qsize()
+                )
                 for plugin in self.plugins:
                     await plugin.queue.put(msg)
 
@@ -96,7 +103,11 @@ class IRCClient:
             plugin_runner(),
         )
 
-    async def load_plugins(self, plugins: List[str], old_data: Dict[str, Any] = None):
+    async def load_plugins(
+            self,
+            plugins: List[str],
+            old_data: Dict[str, Any] = None,
+    ):
         if old_data is None:
             old_data = {}
 
@@ -112,7 +123,8 @@ class IRCClient:
 
             for plugin_name in plugins:
                 if isinstance(plugin_name, dict):
-                    plugin_name, plugin_config = next(iter(plugin_name.items()))
+                    plugin_name, plugin_config = \
+                        next(iter(plugin_name.items()))
                 else:
                     plugin_config = None
 

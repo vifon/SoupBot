@@ -24,7 +24,7 @@ def load_config(path):
 def live_debug(*ignore):
     import pdb
     pdb.set_trace()
-signal.signal(signal.SIGUSR2, live_debug)
+signal.signal(signal.SIGUSR2, live_debug)  # noqa: E305
 
 
 Socket = namedtuple('Socket', ('reader', 'writer'))
@@ -43,6 +43,7 @@ async def run_bot():
     bot = IRCClient(socket, **conf['bot'])
 
     reload_task = None
+
     async def reload_plugins():
         nonlocal conf
         conf = load_config(args.config_file)
