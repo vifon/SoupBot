@@ -38,9 +38,8 @@ async def run_bot():
     conf = load_config(args.config_file)
     hostname = conf['server']
     port = conf['port']
-    socket = Socket(*await asyncio.open_connection(
-        hostname, port, ssl=True
-    ))
+    ssl = conf.get('ssl', True)
+    socket = Socket(*await asyncio.open_connection(hostname, port, ssl=ssl))
     bot = IRCClient(socket, **conf['bot'])
 
     reload_task = None

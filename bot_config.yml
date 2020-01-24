@@ -1,5 +1,6 @@
 server: irc.freenode.net
 port: 7000
+ssl: true
 
 bot:
   nick: Wydrek
