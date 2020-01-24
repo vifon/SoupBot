@@ -72,8 +72,13 @@ async def run_bot():
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     try:
-        asyncio.ensure_future(run_bot())
+        bot_task = asyncio.ensure_future(run_bot())
         loop.run_forever()
     finally:
+        bot_task.cancel()
+        try:
+            loop.run_until_complete(bot_task)
+        except asyncio.CancelledError:
+            pass
         loop.run_until_complete(loop.shutdown_asyncgens())
         loop.close()
