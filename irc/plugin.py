@@ -1,7 +1,7 @@
 import asyncio
 import re
 
-from typing import TYPE_CHECKING, Dict, Any, Callable, Match
+from typing import TYPE_CHECKING, Dict, Any, Callable, Match, Optional
 if TYPE_CHECKING:
     from irc.client import IRCClient    # noqa: F401
     from irc.message import IRCMessage  # noqa: F401
@@ -84,9 +84,7 @@ class IRCCommandPlugin(IRCPlugin):
         super().__init__(*args, **kwargs)
         self.commands: Dict[str, Callable] = {}
 
-    async def react(self, msg: 'IRCMessage'):
-        await super().react(msg)
-
+    async def react(self, msg: 'IRCMessage') -> Optional[bool]:
         if msg.command == 'PRIVMSG':
             assert msg.body is not None
             assert msg.sender is not None
@@ -96,7 +94,9 @@ class IRCCommandPlugin(IRCPlugin):
                 if match:
                     channel = msg.args[0]
                     sender = msg.sender
-                    await command(sender, channel, match, msg)
+                    if await command(sender, channel, match, msg):
+                        return True
+        await super().react(msg)
 
     async def command(
             self,
@@ -104,5 +104,5 @@ class IRCCommandPlugin(IRCPlugin):
             channel: str,
             match: Match,
             msg: 'IRCMessage',
-    ) -> None:
+    ) -> Optional[bool]:
         raise NotImplementedError()
