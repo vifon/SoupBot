@@ -75,6 +75,9 @@ class IRCPlugin:
     def db(self) -> 'sqlite3.Connection':
         return self.client.db
 
+    def auth(self, sender):
+        return sender.identity in self.config['admin']
+
 
 class IRCCommandPlugin(IRCPlugin):
     def __init__(self, *args, **kwargs):

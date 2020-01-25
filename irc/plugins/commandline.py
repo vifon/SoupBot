@@ -14,8 +14,7 @@ class Commandline(IRCCommandPlugin):
     async def react(self, msg):
         if msg.command == 'PRIVMSG':
             channel = msg.args[0]
-            if msg.sender.identity in self.config['admin'] \
-               and channel == self.client.nick:
+            if self.auth(msg.sender) and channel == self.client.nick:
                 await super().react(msg)
 
     async def __join(self, sender, channel, match, msg):

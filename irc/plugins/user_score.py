@@ -23,7 +23,7 @@ class UserScoreQueryMixin(IRCCommandPlugin):
     async def __list_scores(self, sender, channel, match, msg):
         count = int(match[1] or 5)
         max_request = self.config['max_scoreboard_request'] or 10
-        if count > max_request and sender.identity not in self.config['admin']:
+        if count > max_request and not self.auth(sender):
             await self.client.send(
                 'PRIVMSG', channel,
                 body=f"{sender.nick}: Too many scores requested."
@@ -56,7 +56,7 @@ class UserScoreEraseMixin(IRCCommandPlugin):
         })
 
     async def __erase_scores(self, sender, channel, match, msg):
-        if sender.identity not in self.config.get('admin'):
+        if not self.auth(sender):
             return
 
         nick = match[1]
