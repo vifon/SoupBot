@@ -7,6 +7,9 @@ bot:
   name: A pluggable IRC bot
   sqlite_db: bot.db
 
+admins: &admins
+  - "~vifon@example.com"
+
 plugins:
   - irc.plugins.pong.PongPlugin
   - irc.plugins.channels.ChannelManager:
@@ -14,18 +17,15 @@ plugins:
         - '#example'
   - irc.plugins.name_track.NameTrack
   - irc.plugins.user_score.UserScore:
-      admin:
-        - "~vifon@example.com"
+      admin: *admins
       scorables:
         - bacon
       max_scoreboard_request: 10
   - irc.plugins.offline_msg.OfflineMessages:
-      admin:
-        - "~vifon@example.com"
+      admin: *admins
       users:
         '#example':
           - example_user
           - vifontest
   - irc.plugins.commandline.Commandline:
-      admin:
-        - "~vifon@example.com"
+      admin: *admins
