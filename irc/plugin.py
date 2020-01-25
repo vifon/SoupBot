@@ -37,7 +37,6 @@ class IRCPlugin:
             msg = await self.queue.get()
             # Let other plugins run.
             await asyncio.sleep(0)
-            self.logger.debug("Queue size: %d", self.queue.qsize())
             try:
                 await self.react(msg)
             except asyncio.CancelledError:

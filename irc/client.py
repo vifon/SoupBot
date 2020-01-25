@@ -90,6 +90,7 @@ class IRCClient:
                     "Queue size: %d", self.incoming_queue.qsize()
                 )
                 for plugin in self.plugins:
+                    plugin.logger.debug("Queue size: %d", plugin.queue.qsize())
                     await plugin.queue.put(msg)
 
         def plugin_runner():
