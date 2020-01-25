@@ -46,7 +46,7 @@ class OfflineMessages(IRCPlugin):
             # Fall back to manual querying if the NameTrack plugin
             # isn't loaded.
             await self.client.send('NAMES', channel)
-            response = await self.client.recv()
+            response = await self.queue.get()
             names = (nick.lstrip("@+") for nick in response.body.split())
         if recipient in names:
             self.logger.info("Not saving, user present.")
