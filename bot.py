@@ -86,7 +86,9 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     try:
         bot_task = asyncio.ensure_future(run_bot())
-        loop.run_forever()
+        loop.run_until_complete(bot_task)
+    except KeyboardInterrupt:
+        pass
     finally:
         bot_task.cancel()
         try:
