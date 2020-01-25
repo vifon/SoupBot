@@ -1,12 +1,49 @@
+from collections import defaultdict
 from datetime import datetime
-from irc.plugin import IRCPlugin
+from irc.plugin import IRCPlugin, IRCCommandPlugin
+import itertools
 import re
 
 
-class OfflineMessages(IRCPlugin):
+class OfflineMessagesDynamic(IRCCommandPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.users = self.config['users']
+        self.commands.update({
+            r'.offline_add +(\w+)$': self.__add,
+            r'.offline_del +(\w+)$': self.__del,
+        })
+
+    async def __add(self, sender, channel, match, msg):
+        auth = self.auth(sender) and channel.startswith("#")
+        if auth:
+            self.shared_data[channel].add(match[1])
+            await self.client.send(
+                'PRIVMSG', channel,
+                body=f"Understood, I'll keep the messages for {match[1]}."
+            )
+        self.logger.info(
+            "Currently saving messages for: %s", dict(self.shared_data)
+        )
+        return auth
+
+    async def __del(self, sender, channel, match, msg):
+        auth = self.auth(sender) and channel.startswith("#")
+        if auth:
+            self.shared_data[channel].discard(match[1])
+            await self.client.send(
+                'PRIVMSG', channel,
+                body=f"Understood, I'll stop keeping messages for {match[1]}."
+            )
+        self.logger.info(
+            "Currently saving messages for: %s", dict(self.shared_data)
+        )
+        return auth
+
+
+class OfflineMessages(OfflineMessagesDynamic, IRCPlugin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._users = self.config['users']
         c = self.db.cursor()
         c.execute(
             '''
@@ -22,17 +59,26 @@ class OfflineMessages(IRCPlugin):
         )
 
     async def react(self, msg):
+        if await super().react(msg):
+            return
+
         if msg.command == 'PRIVMSG':
             channel = msg.args[0]
-            users = self.users.get(channel, [])
+            users = self.users(channel)
             for user in map(re.escape, users):
                 if re.search(fr"\b{user}\b", msg.body):
                     await self.store_maybe(msg, user)
         elif msg.command == 'JOIN':
             channel = msg.args[0]
-            users = self.users.get(channel, [])
+            users = self.users(channel)
             if msg.sender.nick in users:
                 await self.dump(msg.sender.nick, channel)
+
+    def users(self, channel):
+        return itertools.chain(
+            self._users.get(channel, []),
+            self.shared_data.get(channel, []),
+        )
 
     async def store_maybe(self, msg, recipient):
         channel = msg.args[0]
@@ -104,3 +150,6 @@ class OfflineMessages(IRCPlugin):
             (channel, recipient)
         )
         self.db.commit()
+
+    def _shared_data_init(self):
+        return defaultdict(set)

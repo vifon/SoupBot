@@ -20,6 +20,8 @@ plugins:
         - bacon
       max_scoreboard_request: 10
   - irc.plugins.offline_msg.OfflineMessages:
+      admin:
+        - "~vifon@example.com"
       users:
         '#example':
           - example_user
