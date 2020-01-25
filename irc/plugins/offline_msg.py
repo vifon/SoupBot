@@ -21,7 +21,7 @@ class OfflineMessagesDynamic(IRCCommandPlugin):
                 'PRIVMSG', channel,
                 body=f"Understood, I'll keep the messages for {match[1]}."
             )
-        self.logger.info(
+        self.logger.debug(
             "Currently saving messages for: %s", dict(self.shared_data)
         )
         return auth
@@ -34,7 +34,7 @@ class OfflineMessagesDynamic(IRCCommandPlugin):
                 'PRIVMSG', channel,
                 body=f"Understood, I'll stop keeping messages for {match[1]}."
             )
-        self.logger.info(
+        self.logger.debug(
             "Currently saving messages for: %s", dict(self.shared_data)
         )
         return auth
