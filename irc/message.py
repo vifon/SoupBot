@@ -68,6 +68,9 @@ class IRCMessage:
         )
         return msg
 
+    def __repr__(self):
+        return f'<{__name__}.{type(self).__name__} "{str(self)}">'
+
     def __str__(self) -> str:
         def parts() -> Iterator[str]:
             if self.sender:
