@@ -38,7 +38,7 @@ class NameTrack(IRCPlugin):
         async def NICK(msg):
             old_nick = msg.sender.nick
             new_nick = msg.args[0]
-            self.rename(old_nick, new_nick)
+            await self.rename(old_nick, new_nick)
 
         if msg.command in ('JOIN', 'PART', 'QUIT', 'KICK', 'NICK'):
             await locals()[msg.command](msg)
@@ -70,9 +70,9 @@ class NameTrack(IRCPlugin):
         names = await self.shared_data[channel]
         names.discard(nick)
 
-    def rename(self, old_nick, new_nick):
+    async def rename(self, old_nick, new_nick):
         for channel, nicks in self.shared_data.items():
-            if old_nick in nicks:
+            if old_nick in await nicks:
                 self.logger.info(
                     "%s is not known as %s on %s",
                     old_nick, new_nick, channel
