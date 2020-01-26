@@ -28,7 +28,7 @@ class NameTrack(IRCPlugin):
         async def QUIT(msg):
             nick = msg.sender.nick
             for channel, nicks in self.shared_data.items():
-                if nick in nicks:
+                if nick in await nicks:
                     await self.forget(channel, nick)
 
         async def KICK(msg):
