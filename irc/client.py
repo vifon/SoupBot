@@ -5,7 +5,7 @@ import logging
 import sqlite3
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING, Dict, List, Any  # noqa: F402
+from typing import TYPE_CHECKING, Dict, List, Any, Union  # noqa: F402
 if TYPE_CHECKING:
     from .plugin import IRCPlugin  # noqa: F401
 
@@ -59,7 +59,7 @@ class IRCClient:
         msg = IRCMessage(command, *args, body=body)
         await self.sendmsg(msg, delay)
 
-    async def sendmsg(self, msg: IRCMessage, delay: int = 2):
+    async def sendmsg(self, msg: Union[IRCMessage, str], delay: int = 2):
         self.logger.info("<<< %s", msg)
         self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
         await self.socket.writer.drain()
