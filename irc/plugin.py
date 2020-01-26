@@ -35,8 +35,6 @@ class IRCPlugin:
     async def event_loop(self):
         while True:
             msg = await self.queue.get()
-            # Let other plugins run.
-            await asyncio.sleep(0)
             try:
                 await self.react(msg)
             except asyncio.CancelledError:
