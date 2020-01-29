@@ -33,17 +33,23 @@ class IRCPlugin:
         pass
 
     async def event_loop(self):
-        while True:
-            msg = await self.queue.get()
-            try:
-                await self.react(msg)
-            except asyncio.CancelledError:
-                raise
-            except Exception:
-                self.logger.exception(
-                    "%s caused an exception during processing: %s",
-                    self, repr(msg),
+        try:
+            while True:
+                msg = await self.queue.get()
+                self.logger.debug(
+                    "Queue size on processing: %d", self.queue.qsize()
                 )
+                await self.react(msg)
+                self.queue.task_done()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            self.logger.exception(
+                "%s caused an exception during processing: %s",
+                self, repr(msg),
+            )
+        finally:
+            self.logger.info("%s has finished.", self)
 
     async def react(self, msg: 'IRCMessage'):
         """React to the received message in some way."""

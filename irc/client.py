@@ -5,7 +5,7 @@ import logging
 import sqlite3
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING, Dict, List, Any, Union  # noqa: F402
+from typing import TYPE_CHECKING, Dict, List, Any, Union, Optional  # noqa: F402, E501
 if TYPE_CHECKING:
     from .plugin import IRCPlugin  # noqa: F401
 
@@ -19,7 +19,6 @@ class IRCClient:
             **config: Any,
     ):
         self.socket = socket
-        self.incoming_queue: asyncio.Queue[IRCMessage] = asyncio.Queue()
         self.encoding = encoding
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
@@ -36,18 +35,27 @@ class IRCClient:
         return self
 
     async def __anext__(self) -> IRCMessage:
-        return await self.recv()
+        msg = await self.recv()
+        if msg:
+            return msg
+        else:
+            raise StopAsyncIteration()
 
-    async def recv(self) -> IRCMessage:
+    async def recv(self) -> Optional[IRCMessage]:
         separator = b"\r\n"
         separator_pos = self._buffer.find(separator)
         while separator_pos == -1:
             self._buffer.extend(await self.socket.reader.read(512))
+            if self.at_eof():
+                return None
             separator_pos = self._buffer.find(separator)
         msg = self._buffer[:separator_pos].decode(self.encoding)
         self._buffer = self._buffer[separator_pos+len(separator):]
         self.logger.info(">>> %s", repr(msg))
         return IRCMessage.parse(msg)
+
+    def at_eof(self) -> bool:
+        return self.socket.reader.at_eof()
 
     async def send(
             self,
@@ -60,6 +68,9 @@ class IRCClient:
         await self.sendmsg(msg, delay)
 
     async def sendmsg(self, msg: Union[IRCMessage, str], delay: int = 2):
+        if self.at_eof():
+            self.logger.info("<!< %s", msg)
+            raise IOError("The IRC socket is closed.")
         self.logger.info("<<< %s", msg)
         self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
         await self.socket.writer.drain()
@@ -78,31 +89,36 @@ class IRCClient:
             if msg.command == '001':  # RPL_WELCOME
                 break
 
-    def event_loop(self):
+    async def event_loop(self):
         async def irc_reader():
-            async for msg in self:
-                await self.incoming_queue.put(msg)
+            try:
+                async for msg in self:
+                    for plugin in self.plugins:
+                        plugin.logger.debug(
+                            "Queue size on append: %d", plugin.queue.qsize()
+                        )
+                        await plugin.queue.put(msg)
+                self.logger.info("Encountered the IRC stream EOF.")
+            finally:
+                self.logger.info("IRC reader closing.")
 
-        async def plugin_relay():
-            while True:
-                msg = await self.incoming_queue.get()
-                self.logger.debug(
-                    "Queue size: %d", self.incoming_queue.qsize()
+        async def plugin_runner():
+            try:
+                await asyncio.gather(
+                    *(plugin.event_loop() for plugin in self.plugins)
                 )
-                for plugin in self.plugins:
-                    plugin.logger.debug("Queue size: %d", plugin.queue.qsize())
-                    await plugin.queue.put(msg)
+            except asyncio.CancelledError:
+                self.logger.info("Forcibly closing all plugins.")
+            finally:
+                self.logger.info("All the plugins have finished.")
 
-        def plugin_runner():
-            return asyncio.gather(
-                *(plugin.event_loop() for plugin in self.plugins)
-            )
-
-        return asyncio.gather(
-            irc_reader(),
-            plugin_relay(),
-            plugin_runner(),
-        )
+        plugin_runner_task = asyncio.ensure_future(plugin_runner())
+        self.logger.info("Starting the IRC event loop.")
+        try:
+            await irc_reader()
+        finally:
+            self.logger.info("The IRC event loop has finished.")
+            plugin_runner_task.cancel()
 
     async def load_plugins(
             self,

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
-    datefmt="%H:%M"
+    datefmt="%H:%M:%S"
 )
 
 
@@ -45,15 +45,19 @@ async def run_bot():
     reload_task = None
 
     async def reload_plugins():
+        logger.info("Plugin reload initiated…")
+
         nonlocal conf
         conf = load_config(args.config_file)
 
         nonlocal bot_task
         bot_task.cancel()
+        logger.info("Loading the new plugins…")
         await bot.load_plugins(
             conf['plugins'],
             old_data=bot.unload_plugins()
         )
+        logger.info("Restaring the IRC event loop with new plugins…")
         bot_task = asyncio.ensure_future(bot.event_loop())
 
     def schedule_reload_plugins():
@@ -80,6 +84,8 @@ async def run_bot():
                 reload_task = None
             else:
                 raise
+        else:
+            return
 
 
 if __name__ == '__main__':
