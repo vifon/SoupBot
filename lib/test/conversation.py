@@ -1,0 +1,61 @@
+import asyncio
+
+from ..async import asynchronize
+
+
+class ConversationStep:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def __call__(self, test, logger):
+        pass
+
+
+class ConversationDelay(ConversationStep):
+    def __init__(self, delay, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.delay = delay
+
+    async def __call__(self, test, logger):
+        logger.debug("Waiting for %d seconds…", self.delay)
+        await asyncio.sleep(self.delay)
+        logger.debug("Continuing after the delay.")
+        await super().__call__(test, logger)
+
+
+class ConversationSend(ConversationStep):
+    def __init__(self, msg, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.msg = msg
+
+    async def __call__(self, test, logger):
+        logger.debug("Sending %s", self.msg)
+        await test.client.sendmsg(self.msg)
+        await super().__call__(test, logger)
+
+
+class ConversationRecv(ConversationStep):
+    def __init__(self, expected_resp, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.expected_resp = expected_resp
+
+    async def __call__(self, test, logger):
+        logger.debug("Expecting %s", self.expected_resp)
+        received_resp = await test.client.recv()
+        logger.debug("Received %s", received_resp)
+        test.assertEqual(str(received_resp), self.expected_resp)
+        await super().__call__(test, logger)
+
+
+class ConversationSendRecv(ConversationSend, ConversationRecv):
+    pass
+
+
+def conversation(orig_test):
+    @asynchronize
+    async def real_test(self):
+        exchange = orig_test(self)
+        logger = self.logger.getChild(orig_test.__name__)
+        for step in exchange:
+            await step(self, logger)
+    return real_test
