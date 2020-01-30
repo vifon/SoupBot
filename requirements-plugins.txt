@@ -1,0 +1,4 @@
+# irc.plugins.http_preview.HTTPPreview
+aiohttp==3.6.2
+urlextract==0.14.0
+beautifulsoup4==4.8.2
