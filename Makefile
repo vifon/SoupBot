@@ -40,14 +40,14 @@ unittest:
 
 .PHONY: coverage
 coverage: .coverage
+	coverage report
 
 .coverage: $(PY_SOURCES) $(PY_TEST_SOURCES)
 	./test.sh -c
-	coverage report
 
 .PHONY: coverage-html
 coverage-html: htmlcov/index.html
+	xdg-open file://$(PWD)/htmlcov/index.html
 
 htmlcov/index.html: .coverage
 	coverage html
-	xdg-open file://$(PWD)/htmlcov/index.html
