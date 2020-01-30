@@ -58,11 +58,15 @@ class ConversationNoResponse(ConversationStep):
 
     async def __call__(self, test, logger):
         try:
-            await asyncio.wait_for(test.client.recv(), timeout=self.timeout)
+            response = await asyncio.wait_for(
+                test.client.recv(),
+                timeout=self.timeout,
+            )
         except asyncio.TimeoutError:
             did_timeout = True
         else:
             did_timeout = False
+            logger.error('Expected nothing, got "%s"', response)
         test.assertTrue(did_timeout)
         await super().__call__(test, logger)
 
