@@ -99,7 +99,7 @@ class IRCCommandPlugin(IRCPlugin):
                     sender = msg.sender
                     if await command(sender, channel, match, msg):
                         return True
-        await super().react(msg)
+        return await super().react(msg)
 
     async def command(
             self,
