@@ -41,7 +41,11 @@ class ConversationRecv(ConversationStep):
 
     async def __call__(self, test, logger):
         logger.debug("Expecting %s", self.expected_resp)
-        received_resp = await test.client.recv()
+        try:
+            received_resp = await asyncio.wait_for(test.client.recv(), timeout=2)
+        except asyncio.TimeoutError:
+            logger.error('Expected "%s", got nothing.', self.expected_resp)
+            raise
         logger.debug("Received %s", received_resp)
         test.assertEqual(str(received_resp), self.expected_resp)
         await super().__call__(test, logger)
