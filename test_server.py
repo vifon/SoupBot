@@ -309,6 +309,11 @@ class IRCTests(unittest.TestCase):
             SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 11",
                      f"PRIVMSG #test-channel1 :{no_admin.nick}:"
                      " Too many scores requested."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+                     f" :{self.admin.nick}++",
+                     "PRIVMSG #test-channel1 "
+                     f":{self.admin.nick}: No self-scoring!"),
         ]
 
     @conversation
