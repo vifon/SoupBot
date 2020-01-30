@@ -11,7 +11,7 @@ bot:
   delay: 0
 
 admins: &admins
-  - "~testadmin@localhost"
+  - "testadmin@localhost"
 
 plugins:
   - irc.plugins.pong.PongPlugin
