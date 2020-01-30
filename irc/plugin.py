@@ -2,7 +2,7 @@ import asyncio
 import re
 
 from typing import TYPE_CHECKING, Dict, Any, Callable, Match, Optional
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from irc.client import IRCClient    # noqa: F401
     from irc.message import IRCMessage  # noqa: F401
     import sqlite3                      # noqa: F401

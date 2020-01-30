@@ -6,7 +6,7 @@ import sqlite3
 logger = logging.getLogger(__name__)
 
 from typing import TYPE_CHECKING, Dict, List, Any, Union, Optional  # noqa: F402, E501
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .plugin import IRCPlugin  # noqa: F401
 
 
