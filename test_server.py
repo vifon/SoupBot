@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
+    datefmt="%H:%M:%S"
+)
+
 from bot import load_config, Socket
 from irc.client import IRCClient
 from irc.user import IRCUser
 import asyncio
-import logging
 import re
 import socket
 import unittest
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 TEST_CONFIG = "test_config.yml"
 conf = load_config(TEST_CONFIG)
@@ -36,17 +41,25 @@ def conversation(test):
     @asynchronize
     async def real_test(self):
         exchange = test(self)
+        logger = self.logger.getChild(f"{test.__name__}")
         for msg, expected_resp in exchange:
             if msg:
+                logger.debug("Sending %s", msg)
                 await self.client.sendmsg(msg)
             if expected_resp:
+                logger.debug("Expecting %s", expected_resp)
                 received_resp = await self.client.recv()
+                logger.debug("Received %s", received_resp)
                 self.assertEqual(str(received_resp), expected_resp)
     return real_test
 
 
 class IRCTests(unittest.TestCase):
     IDLE_TIME = 3
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.logger = logger.getChild(type(self).__name__)
 
     @classmethod
     def setUpClass(cls):
