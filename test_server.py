@@ -8,17 +8,17 @@ logging.basicConfig(
     datefmt="%H:%M:%S"
 )
 
-from bot import load_config, Socket
-from datetime import datetime
-from irc.client import IRCClient
-from irc.user import IRCUser
-import asyncio
-import re
-import socket
-import unittest
+from bot import load_config, Socket  # noqa: F401
+from datetime import datetime        # noqa: F401
+from irc.client import IRCClient     # noqa: F401
+from irc.user import IRCUser         # noqa: F401
+import asyncio                       # noqa: F401
+import re                            # noqa: F401
+import socket                        # noqa: F401
+import unittest                      # noqa: F401
 
-from lib.async import asynchronize, avait
-from lib.test.conversation import (
+from lib.async import asynchronize, avait  # noqa: F401
+from lib.test.conversation import (        # noqa: F401
     ConversationSend as Send,
     ConversationRecv as Recv,
     ConversationSendRecv as SendRecv,
