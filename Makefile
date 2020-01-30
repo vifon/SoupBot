@@ -31,7 +31,7 @@ flake8:
 
 .PHONY: typing
 typing:
-	mypy -m bot -m irc.client -m irc.plugin -m irc.message -m irc.user
+	mypy --namespace-packages -m bot -m irc.client -m irc.plugin -m irc.message -m irc.user
 
 .PHONY: unittest
 unittest:
