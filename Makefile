@@ -1,4 +1,4 @@
-.PHONY: all test pylint typing
+.PHONY: all test pylint flake8 typing unittest
 
 all: test
 
