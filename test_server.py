@@ -18,7 +18,7 @@ import socket                        # noqa: F401
 import unittest                      # noqa: F401
 
 from lib.async_helpers import asynchronize, avait  # noqa: F401
-from lib.test.conversation import (        # noqa: F401
+from lib.test.conversation import (                # noqa: F401
     ConversationDelay as Delay,
     ConversationNoResponse as NoResponse,
     ConversationRecv as Recv,
@@ -32,14 +32,7 @@ TEST_CONFIG = "test_config.yml"
 conf = load_config(TEST_CONFIG)
 
 
-class IRCTestServer(IRCClient):
-    async def sendmsg(self, msg):
-        await super().sendmsg(msg, delay=0)
-
-
 class IRCTests(unittest.TestCase):
-    IDLE_TIME = 3
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logger.getChild(type(self).__name__)
@@ -65,7 +58,7 @@ class IRCTests(unittest.TestCase):
         cls.asock = Socket(*avait(asyncio.open_connection(sock=cls.sock)))
 
         # Initialize the IRC "client".
-        cls.client = IRCTestServer(cls.asock, **conf['bot'])
+        cls.client = IRCClient(cls.asock, **conf['bot'])
 
         # Initialize some auxiliary constants.
         cls.bot = IRCUser(
