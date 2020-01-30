@@ -66,7 +66,7 @@ class UserScoreEraseMixin(IRCCommandPlugin):
             DELETE FROM score
             WHERE nick=? AND channel=?
             ''',
-            (nick, channel,)
+            (nick, channel)
         )
         self.db.commit()
         await self.client.send(
