@@ -189,15 +189,65 @@ class IRCTests(unittest.TestCase):
 
     @conversation
     def test_06_rating(self):
+        no_admin = IRCUser(
+            nick='someguy',
+            user='nobody',
+            host="localhost",
+        )
+
         return [
             SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
                      "PRIVMSG #test-channel1 :bacon has no score."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores",
+                     "PRIVMSG #test-channel1 :End of scores."),
+
             SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
                      " :I like bacon++.",
                      "PRIVMSG #test-channel1 :bacon's score is now 1."),
+
+            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 1."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
             SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
                      " :++bacon is great.",
                      "PRIVMSG #test-channel1 :bacon's score is now 2."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+                     f" :{self.bot.nick}++",
+                     "PRIVMSG #test-channel1"
+                     f" :{self.bot.nick}'s score is now 1."),
+
+            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
+            Recv(f"PRIVMSG #test-channel1 :{self.bot.nick}'s score is 1."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+                     f" :{self.bot.nick}++",
+                     "PRIVMSG #test-channel1"
+                     f" :{self.bot.nick}'s score is now 2."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+                     f" :{self.bot.nick}++",
+                     "PRIVMSG #test-channel1"
+                     f" :{self.bot.nick}'s score is now 3."),
+
+            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Recv(f"PRIVMSG #test-channel1 :{self.bot.nick}'s score is 3."),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+                     f" :.descore {self.bot.nick}",
+                     "PRIVMSG #test-channel1"
+                     f" :{self.bot.nick}'s score erased."),
+
+            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
             SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :bacon++",
                      "PRIVMSG #test-channel1 :bacon's score is now 3."),
             SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
@@ -205,8 +255,67 @@ class IRCTests(unittest.TestCase):
                      "PRIVMSG #test-channel1 :bacon's score is now 2."),
             SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :++bacon",
                      "PRIVMSG #test-channel1 :bacon's score is now 3."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
+                     "PRIVMSG #test-channel1 :bacon's score is 3."),
+            SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.score bacon",
+                     "PRIVMSG #test-channel1 :bacon's score is 3."),
+
             SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :--bacon",
                      "PRIVMSG #test-channel1 :bacon's score is now 2."),
+
+            SendIgnored(f"{str(no_admin)} PRIVMSG #test-channel1"
+                        " :.descore bacon",
+                        timeout=0.2),
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
+                     "PRIVMSG #test-channel1 :bacon's score is 2."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel2 :.score bacon",
+                     "PRIVMSG #test-channel2 :bacon has no score."),
+
+            Send(f"{str(self.admin)} PRIVMSG #test-channel2 :.scores"),
+            Recv("PRIVMSG #test-channel2 :End of scores."),
+
+            SendIgnored(f"{str(self.admin)} PRIVMSG {self.bot.nick} :bacon++",
+                        timeout=0.2),
+
+            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
+            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores 11"),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
+            Send(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores"),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
+            Send(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 10"),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
+            SendIgnored(f"{str(no_admin)} PRIVMSG #test-channel1"
+                        " :.descore bacon",
+                        timeout=0.2),
+
+            SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 11",
+                     f"PRIVMSG #test-channel1 :{no_admin.nick}:"
+                     " Too many scores requested."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+                     " :.descore bacon",
+                     f"PRIVMSG #test-channel1 :bacon's score erased."),
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
+                     "PRIVMSG #test-channel1 :bacon has no score."),
+
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores",
+                     "PRIVMSG #test-channel1 :End of scores."),
+            SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 10",
+                     "PRIVMSG #test-channel1 :End of scores."),
+            SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 11",
+                     f"PRIVMSG #test-channel1 :{no_admin.nick}:"
+                     " Too many scores requested."),
         ]
 
     @conversation
