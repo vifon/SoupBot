@@ -1,6 +1,6 @@
 import asyncio
 
-from ..async import asynchronize
+from ..async import asynchronize, avait
 
 
 class ConversationStep:
@@ -45,6 +45,26 @@ class ConversationRecv(ConversationStep):
         logger.debug("Received %s", received_resp)
         test.assertEqual(str(received_resp), self.expected_resp)
         await super().__call__(test, logger)
+
+
+class ConversationNoResponse(ConversationStep):
+    def __init__(self, timeout, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.timeout = timeout
+
+    async def __call__(self, test, logger):
+        try:
+            await asyncio.wait_for(test.client.recv(), timeout=self.timeout)
+        except asyncio.TimeoutError:
+            did_timeout = True
+        else:
+            did_timeout = False
+        test.assertTrue(did_timeout)
+        await super().__call__(test, logger)
+
+
+class ConversationSendIgnored(ConversationSend, ConversationNoResponse):
+    pass
 
 
 class ConversationSendRecv(ConversationSend, ConversationRecv):
