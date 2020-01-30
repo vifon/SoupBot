@@ -16,10 +16,12 @@ class IRCClient:
             socket,
             encoding: str = 'utf-8',
             sqlite_db: str = ':memory:',
+            delay: int = 2,
             **config: Any,
     ):
         self.socket = socket
         self.encoding = encoding
+        self.delay = delay
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
         self.db = sqlite3.connect(
@@ -62,18 +64,20 @@ class IRCClient:
             command: str,
             *args: str,
             body: str = None,
-            delay: int = 2,
+            delay: int = None,
     ):
         msg = IRCMessage(command, *args, body=body)
         await self.sendmsg(msg, delay)
 
-    async def sendmsg(self, msg: Union[IRCMessage, str], delay: int = 2):
+    async def sendmsg(self, msg: Union[IRCMessage, str], delay: int = None):
         if self.at_eof():
             self.logger.info("<!< %s", msg)
             raise IOError("The IRC socket is closed.")
         self.logger.info("<<< %s", msg)
         self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
         await self.socket.writer.drain()
+        if delay is None:
+            delay = self.delay
         await asyncio.sleep(delay)
 
     async def greet(self):
