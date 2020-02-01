@@ -1,4 +1,4 @@
-from .message import IRCMessage
+from .message import IRCMessage, InjectionError
 from types import SimpleNamespace
 import asyncio
 import logging
@@ -54,7 +54,7 @@ class IRCClient:
         msg = self._buffer[:separator_pos].decode(self.encoding)
         self._buffer = self._buffer[separator_pos+len(separator):]
         self.logger.info(">>> %s", repr(msg))
-        return IRCMessage.parse(msg)
+        return IRCMessage.parse(msg, allow_unsafe=True)
 
     def at_eof(self) -> bool:
         return self.socket.reader.at_eof()
@@ -66,8 +66,12 @@ class IRCClient:
             body: str = None,
             delay: int = None,
     ):
-        msg = IRCMessage(command, *args, body=body)
-        await self.sendmsg(msg, delay)
+        try:
+            msg = IRCMessage(command, *args, body=body)
+        except InjectionError:
+            self.logger.warning("A possible abuse detected!  %s", repr(body))
+        else:
+            await self.sendmsg(msg, delay)
 
     async def sendmsg(self, msg: Union[IRCMessage, str], delay: int = None):
         if self.at_eof():

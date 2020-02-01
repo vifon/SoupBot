@@ -1,10 +1,15 @@
 from .user import IRCUser
 import re
+import unicodedata
 
 from typing import List, Optional, Iterator
 
 
 class ParseError(Exception):
+    pass
+
+
+class InjectionError(Exception):
     pass
 
 
@@ -15,7 +20,8 @@ class IRCMessage:
             *args: str,
             sender: IRCUser = None,
             body: str = None,
-            raw: str = None
+            raw: str = None,
+            allow_unsafe: bool = False,
     ):
         self.command: str = command
         self.args = args
@@ -23,8 +29,24 @@ class IRCMessage:
         self.body = body
         self.raw = raw
 
+        if not allow_unsafe:
+            if not self._sanitize():
+                raise InjectionError()
+
+    def _sanitize(self):
+        def isprintable(string):
+            return all(not unicodedata.category(c) == 'Cc' for c in string)
+
+        if self.body is not None:
+            if not isprintable(self.body):
+                return False
+        for arg in self.args:
+            if not isprintable(arg):
+                return False
+        return True
+
     @classmethod
-    def parse(cls, msgstr: str) -> 'IRCMessage':
+    def parse(cls, msgstr: str, allow_unsafe: bool = False) -> 'IRCMessage':
         match = re.match(
             r'''
             (?:
@@ -65,6 +87,7 @@ class IRCMessage:
             sender=sender,
             body=body,
             raw=msgstr,
+            allow_unsafe=allow_unsafe,
         )
         return msg
 
