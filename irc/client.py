@@ -75,9 +75,9 @@ class IRCClient:
 
     async def sendmsg(self, msg: Union[IRCMessage, str], delay: int = None):
         if self.at_eof():
-            self.logger.info("<!< %s", msg)
+            self.logger.info("<!< %s", repr(msg))
             raise IOError("The IRC socket is closed.")
-        self.logger.info("<<< %s", msg)
+        self.logger.info("<<< %s", repr(msg))
         self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
         await self.socket.writer.drain()
         if delay is None:
