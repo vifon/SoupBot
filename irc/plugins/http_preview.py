@@ -1,3 +1,4 @@
+from irc.message import IRCMessage
 from irc.plugin import IRCPlugin
 
 from bs4 import BeautifulSoup
@@ -37,16 +38,16 @@ class HTTPPreview(IRCPlugin):
                                 timeout=2,
                             )
                         except asyncio.TimeoutError:
-                            await self.client.send(
+                            self.client.send(IRCMessage(
                                 'PRIVMSG', channel,
                                 body=f"{nick}: Preview timed out.",
-                            )
+                            ))
                             raise
                         else:
                             title = soup.title.get_text()
-                            await self.client.send(
+                            self.client.send(IRCMessage(
                                 'PRIVMSG', channel,
                                 body=f"{nick}: {title}",
-                            )
+                            ))
                 except Exception:
                     self.logger.exception("Error during processing %s", url)

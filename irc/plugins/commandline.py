@@ -18,11 +18,10 @@ class Commandline(IRCCommandPlugin):
                 await super().react(msg)
 
     async def __join(self, sender, channel, match, msg):
-        await self.client.send('JOIN', match[1])
+        self.client.send(IRCMessage('JOIN', match[1]))
 
     async def __part(self, sender, channel, match, msg):
-        await self.client.send('PART', match[1])
+        self.client.send(IRCMessage('PART', match[1]))
 
     async def __raw(self, sender, channel, match, msg):
-        new_message = IRCMessage.parse(match[1])
-        await self.client.sendmsg(new_message)
+        self.client.send(match[1])

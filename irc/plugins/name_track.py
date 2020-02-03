@@ -1,4 +1,5 @@
 from collections import defaultdict
+from irc.message import IRCMessage
 from irc.plugin import IRCPlugin
 import asyncio
 
@@ -45,7 +46,7 @@ class NameTrack(IRCPlugin):
 
     async def query_names(self, channel):
         self.logger.info("No cached names for %s, querying…", channel)
-        await self.client.send('NAMES', channel)
+        self.client.send(IRCMessage('NAMES', channel))
         names = set()
         while True:
             response = await self.queue.get()

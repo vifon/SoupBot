@@ -87,14 +87,14 @@ class IRCTests(unittest.TestCase):
 
     @asynchronize
     async def test_02_nick_collision(self):
-        await self.client.sendmsg(
+        await self.client._send(
             f":{self.host} 433 * {self.bot.nick}"
             " :Nickname is already in use.",
         )
         self.bot.nick += "_"
         new_nick_greeting = await self.client.recv()
         self.assertEqual(str(new_nick_greeting), f"NICK {self.bot.nick}")
-        await self.client.sendmsg(
+        await self.client._send(
             f":{self.host} 001 {self.bot.nick}"
             " :Welcome to the Internet Relay Chat mock server"
             " {self.bot.nick}"
@@ -102,11 +102,11 @@ class IRCTests(unittest.TestCase):
 
     def send_names(self, channel, names):
         return [
-            self.client.sendmsg(
+            self.client._send(
                 f":{self.host} 353 {self.bot.nick} @ {channel}"
                 f" :{names}"
             ),
-            self.client.sendmsg(
+            self.client._send(
                 f":{self.host} 366 {self.bot.nick} {channel}"
                 " :End of /NAMES list."
             ),
@@ -123,7 +123,7 @@ class IRCTests(unittest.TestCase):
             join = await self.client.recv()
             channel = re.match(r'JOIN (.+)', str(join)).group(1)
             self.assertIn(channel, channels)
-            await self.client.sendmsg(f"{str(self.bot)} JOIN {channel}")
+            await self.client._send(f"{str(self.bot)} JOIN {channel}")
             # The bot should ignore these lines for now.
             names = channels[channel]
             for coro in self.send_names(channel, " ".join(names)):

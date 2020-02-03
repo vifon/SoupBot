@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
+from irc.message import IRCMessage
 from irc.plugin import IRCPlugin, IRCCommandPlugin
 import itertools
 import re
@@ -17,10 +18,10 @@ class OfflineMessagesDynamic(IRCCommandPlugin):
         auth = self.auth(sender) and channel.startswith("#")
         if auth:
             self.shared_data[channel].add(match[1])
-            await self.client.send(
+            self.client.send(IRCMessage(
                 'PRIVMSG', channel,
                 body=f"Understood, I'll keep the messages for {match[1]}."
-            )
+            ))
         self.logger.debug(
             "Currently saving messages for: %s", dict(self.shared_data)
         )
@@ -30,10 +31,10 @@ class OfflineMessagesDynamic(IRCCommandPlugin):
         auth = self.auth(sender) and channel.startswith("#")
         if auth:
             self.shared_data[channel].discard(match[1])
-            await self.client.send(
+            self.client.send(IRCMessage(
                 'PRIVMSG', channel,
                 body=f"Understood, I'll stop keeping messages for {match[1]}."
-            )
+            ))
         self.logger.debug(
             "Currently saving messages for: %s", dict(self.shared_data)
         )
@@ -91,7 +92,7 @@ class OfflineMessages(OfflineMessagesDynamic, IRCPlugin):
         except AttributeError:
             # Fall back to manual querying if the NameTrack plugin
             # isn't loaded.
-            await self.client.send('NAMES', channel)
+            self.client.send(IRCMessage('NAMES', channel))
             response = await self.queue.get()
             names = (nick.lstrip("@+") for nick in response.body.split())
         if recipient in names:
@@ -135,7 +136,7 @@ class OfflineMessages(OfflineMessagesDynamic, IRCPlugin):
             (channel, recipient)
         )
         for timestamp, sender, body in c:
-            await self.client.send(
+            self.client.send(IRCMessage(
                 'PRIVMSG',
                 channel,
                 body="{time} <{sender}> {body}".format(
@@ -143,7 +144,7 @@ class OfflineMessages(OfflineMessagesDynamic, IRCPlugin):
                     sender=sender,
                     body=body,
                 )
-            )
+            ))
 
         c.execute(
             'DELETE FROM offline_msg WHERE channel=? AND recipient=?',

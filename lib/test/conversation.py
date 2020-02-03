@@ -30,7 +30,7 @@ class ConversationSend(ConversationStep):
 
     async def __call__(self, test, logger):
         logger.debug("Sending %s", self.msg)
-        await test.client.sendmsg(self.msg)
+        await test.client._send(self.msg)
         await super().__call__(test, logger)
 
 

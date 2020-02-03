@@ -1,3 +1,4 @@
+from irc.message import IRCMessage
 from irc.plugin import IRCPlugin
 
 
@@ -12,10 +13,10 @@ class ChannelManager(IRCPlugin):
 
         for channel in join:
             self.logger.info("Joining %s…", channel)
-            await self.client.send('JOIN', channel)
+            self.client.send(IRCMessage('JOIN', channel))
         for channel in part:
             self.logger.info("Parting %s…", channel)
-            await self.client.send('PART', channel)
+            self.client.send(IRCMessage('PART', channel))
 
     def _shared_data_init(self):
         return set()

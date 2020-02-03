@@ -29,7 +29,6 @@ class IRCMessage:
             sender: IRCUser = None,
             body: str = None,
             raw: str = None,
-            allow_unsafe: bool = False,
     ):
         self.command: str = command
         self.args = args
@@ -37,10 +36,7 @@ class IRCMessage:
         self.body = body
         self.raw = raw
 
-        if not allow_unsafe:
-            self._sanitize()
-
-    def _sanitize(self):
+    def sanitize(self):
         def isprintable(string):
             return all(not unicodedata.category(c) == 'Cc' for c in string)
 
@@ -55,7 +51,7 @@ class IRCMessage:
             raise ExcessiveLengthError()
 
     @classmethod
-    def parse(cls, msgstr: str, allow_unsafe: bool = False) -> 'IRCMessage':
+    def parse(cls, msgstr: str) -> 'IRCMessage':
         match = re.match(
             r'''
             (?:
@@ -96,7 +92,6 @@ class IRCMessage:
             sender=sender,
             body=body,
             raw=msgstr,
-            allow_unsafe=allow_unsafe,
         )
         return msg
 

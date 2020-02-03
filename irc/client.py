@@ -32,6 +32,7 @@ class IRCClient:
         self._buffer = bytearray()
         self.plugins: List['IRCPlugin'] = []
         self.shared_data = SimpleNamespace()
+        self.outgoing_queue: asyncio.Queue = asyncio.Queue()
 
     def __aiter__(self):
         return self
@@ -54,46 +55,35 @@ class IRCClient:
         msg = self._buffer[:separator_pos].decode(self.encoding)
         self._buffer = self._buffer[separator_pos+len(separator):]
         self.logger.info(">>> %s", repr(msg))
-        return IRCMessage.parse(msg, allow_unsafe=True)
+        return IRCMessage.parse(msg)
 
     def at_eof(self) -> bool:
         return self.socket.reader.at_eof()
 
-    async def send(
-            self,
-            command: str,
-            *args: str,
-            body: str = None,
-            delay: int = None,
-    ):
-        try:
-            msg = IRCMessage(command, *args, body=body)
-        except IRCSecurityError:
-            self.logger.warning("A possible abuse detected!  %s", repr(body))
-        else:
-            await self.sendmsg(msg, delay)
+    def send(self, msg: Union[IRCMessage, str]):
+        self.outgoing_queue.put_nowait(msg)
 
-    async def sendmsg(self, msg: Union[IRCMessage, str], delay: int = None):
+    async def _send(self, msg: Union[IRCMessage, str]):
         if self.at_eof():
             self.logger.info("<!< %s", repr(str(msg)))
             raise IOError("The IRC socket is closed.")
         self.logger.info("<<< %s", repr(str(msg)))
+        if isinstance(msg, IRCMessage):
+            msg.sanitize()
+        elif isinstance(msg, str):
+            IRCMessage.parse(msg).sanitize()
         self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
         await self.socket.writer.drain()
-        if delay is None:
-            delay = self.delay
-        await asyncio.sleep(delay)
 
     async def greet(self):
-        await self.send(
+        await self._send(IRCMessage(
             "USER", self.nick, "*", "*", body=self.config['name'],
-            delay=0,
-        )
-        await self.send('NICK', self.nick, delay=0)
+        ))
+        await self._send(IRCMessage('NICK', self.nick))
         async for msg in self:
             if msg.command == '433':  # ERR_NICKNAMEINUSE
                 self.nick += "_"
-                await self.send('NICK', self.nick, delay=0)
+                await self._send(IRCMessage('NICK', self.nick))
             if msg.command == '001':  # RPL_WELCOME
                 break
 
@@ -110,6 +100,16 @@ class IRCClient:
             finally:
                 self.logger.info("IRC reader closing.")
 
+        async def irc_writer():
+            while True:
+                msg = await self.outgoing_queue.get()
+                try:
+                    await self._send(msg)
+                except IRCSecurityError:
+                    self.logger.warning("A possible abuse detected!")
+                else:
+                    await asyncio.sleep(self.delay)
+
         async def plugin_runner():
             try:
                 await asyncio.gather(
@@ -121,12 +121,14 @@ class IRCClient:
                 self.logger.info("All the plugins have finished.")
 
         plugin_runner_task = asyncio.ensure_future(plugin_runner())
+        irc_writer_task = asyncio.ensure_future(irc_writer())
         self.logger.info("Starting the IRC event loop.")
         try:
             await irc_reader()
         finally:
             self.logger.info("The IRC event loop has finished.")
             plugin_runner_task.cancel()
+            irc_writer_task.cancel()
 
     async def load_plugins(
             self,
