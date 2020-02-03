@@ -3,8 +3,8 @@ from irc.plugin import IRCPlugin
 
 
 class ChannelManager(IRCPlugin):
-    async def start(self):
-        await super().start()
+    def start(self):
+        super().start()
 
         channels = set(self.config['channels'])
         join = channels.difference(self.shared_data)

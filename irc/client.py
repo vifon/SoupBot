@@ -179,7 +179,7 @@ class IRCClient:
         if failed_plugins:
             self.logger.warning("Failed plugins: %s", failed_plugins)
         for plugin in self.plugins:
-            await plugin.start()
+            plugin.start()
 
     def unload_plugins(self) -> Dict[str, Any]:
         self.logger.info("Unloading plugins…")

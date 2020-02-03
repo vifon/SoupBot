@@ -122,9 +122,9 @@ class UserScore(UserScoreQueryMixin, UserScoreEraseMixin, IRCPlugin):
             if match:
                 nick = match.group('nick1') or match.group('nick2')
                 op = match.group('op1') or match.group('op2')
-                await self.respond_score(msg.sender.nick, nick, channel, op)
+                self.respond_score(msg.sender.nick, nick, channel, op)
 
-    async def respond_score(self, sender, nick, channel, operator):
+    def respond_score(self, sender, nick, channel, operator):
         if sender == nick:
             self.client.send(IRCMessage(
                 'PRIVMSG', channel,
