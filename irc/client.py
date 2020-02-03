@@ -54,7 +54,7 @@ class IRCClient:
             separator_pos = self._buffer.find(separator)
         msg = self._buffer[:separator_pos].decode(self.encoding)
         self._buffer = self._buffer[separator_pos+len(separator):]
-        self.logger.info(">>> %s", repr(msg))
+        self.logger.info(">>> %r", msg)
         return IRCMessage.parse(msg)
 
     def at_eof(self) -> bool:
@@ -69,9 +69,9 @@ class IRCClient:
             allow_unsafe: bool = False,  # Mostly for testing.
     ):
         if self.at_eof():
-            self.logger.info("<!< %s", repr(str(msg)))
+            self.logger.info("<!< %r", str(msg))
             raise IOError("The IRC socket is closed.")
-        self.logger.info("<<< %s", repr(str(msg)))
+        self.logger.info("<<< %r", str(msg))
         if not allow_unsafe:
             if isinstance(msg, IRCMessage):
                 msg.sanitize()
