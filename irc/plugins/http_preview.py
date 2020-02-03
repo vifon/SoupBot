@@ -26,14 +26,23 @@ class HTTPPreview(IRCPlugin):
                                 fetch(session, url),
                                 timeout=self.config.get('timeout', 10),
                             )
+                            loop = asyncio.get_event_loop()
+                            soup = await asyncio.wait_for(
+                                loop.run_in_executor(
+                                    None,
+                                    BeautifulSoup, html, 'html.parser',
+                                ),
+                                # 2 seconds should be a plenty for
+                                # sane webpages.
+                                timeout=2,
+                            )
                         except asyncio.TimeoutError:
                             await self.client.send(
                                 'PRIVMSG', channel,
-                                body=f"{nick}: Request timed out.",
+                                body=f"{nick}: Preview timed out.",
                             )
                             raise
                         else:
-                            soup = BeautifulSoup(html, 'html.parser')
                             title = soup.title.get_text()
                             await self.client.send(
                                 'PRIVMSG', channel,
