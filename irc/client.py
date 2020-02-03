@@ -63,15 +63,20 @@ class IRCClient:
     def send(self, msg: Union[IRCMessage, str]):
         self.outgoing_queue.put_nowait(msg)
 
-    async def _send(self, msg: Union[IRCMessage, str]):
+    async def _send(
+            self,
+            msg: Union[IRCMessage, str],
+            allow_unsafe: bool = False,  # Mostly for testing.
+    ):
         if self.at_eof():
             self.logger.info("<!< %s", repr(str(msg)))
             raise IOError("The IRC socket is closed.")
         self.logger.info("<<< %s", repr(str(msg)))
-        if isinstance(msg, IRCMessage):
-            msg.sanitize()
-        elif isinstance(msg, str):
-            IRCMessage.parse(msg).sanitize()
+        if not allow_unsafe:
+            if isinstance(msg, IRCMessage):
+                msg.sanitize()
+            elif isinstance(msg, str):
+                IRCMessage.parse(msg).sanitize()
         self.socket.writer.write(f"{msg}\r\n".encode(self.encoding))
         await self.socket.writer.drain()
 
