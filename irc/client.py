@@ -1,4 +1,4 @@
-from .message import IRCMessage, InjectionError
+from .message import IRCMessage, IRCSecurityError
 from types import SimpleNamespace
 import asyncio
 import logging
@@ -68,7 +68,7 @@ class IRCClient:
     ):
         try:
             msg = IRCMessage(command, *args, body=body)
-        except InjectionError:
+        except IRCSecurityError:
             self.logger.warning("A possible abuse detected!  %s", repr(body))
         else:
             await self.sendmsg(msg, delay)

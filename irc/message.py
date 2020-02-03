@@ -9,7 +9,15 @@ class ParseError(Exception):
     pass
 
 
-class InjectionError(Exception):
+class IRCSecurityError(Exception):
+    pass
+
+
+class InjectionError(IRCSecurityError):
+    pass
+
+
+class ExcessiveLengthError(IRCSecurityError):
     pass
 
 
@@ -30,8 +38,7 @@ class IRCMessage:
         self.raw = raw
 
         if not allow_unsafe:
-            if not self._sanitize():
-                raise InjectionError()
+            self._sanitize()
 
     def _sanitize(self):
         def isprintable(string):
@@ -39,11 +46,13 @@ class IRCMessage:
 
         if self.body is not None:
             if not isprintable(self.body):
-                return False
+                raise InjectionError()
         for arg in self.args:
             if not isprintable(arg):
-                return False
-        return True
+                raise InjectionError()
+
+        if len(str(self)) > 512:
+            raise ExcessiveLengthError()
 
     @classmethod
     def parse(cls, msgstr: str, allow_unsafe: bool = False) -> 'IRCMessage':
