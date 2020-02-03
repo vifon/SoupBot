@@ -110,8 +110,8 @@ class IRCClient:
                 msg = await self.outgoing_queue.get()
                 try:
                     await self._send(msg)
-                except IRCSecurityError:
-                    self.logger.warning("A possible abuse detected!")
+                except IRCSecurityError as e:
+                    self.logger.warning("A possible abuse detected: %r", e)
                 else:
                     await asyncio.sleep(self.delay)
 
