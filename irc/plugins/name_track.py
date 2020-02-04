@@ -38,7 +38,7 @@ class NameTrack(IRCPlugin):
 
         async def NICK(msg):
             old_nick = msg.sender.nick
-            new_nick = msg.args[0]
+            new_nick = msg.body
             await self.rename(old_nick, new_nick)
 
         if msg.command in ('JOIN', 'PART', 'QUIT', 'KICK', 'NICK'):
