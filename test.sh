@@ -28,7 +28,9 @@ shift $((OPTIND-1))
 
 start_test_server() {
     ./test_server.py &
-    SERVER_PID="$!"
+    IRC_SERVER_PID="$!"
+    ./tests/http_mock.py &> /dev/null &
+    HTTP_SERVER_PID="$!"
     sleep 0.2
 }
 
@@ -54,7 +56,8 @@ start_test_client() {
 }
 
 stop_test_server() {
-    kill "$SERVER_PID" 2> /dev/null && echo "Killed the test server." || true
+    kill "$IRC_SERVER_PID" 2> /dev/null && echo "Killed the test IRC server." || true
+    kill "$HTTP_SERVER_PID" 2> /dev/null && echo "Killed the test HTTP server." || true
     exit
 }
 

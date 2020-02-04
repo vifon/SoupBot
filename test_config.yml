@@ -32,3 +32,5 @@ plugins:
           - offline_user
   - irc.plugins.commandline.Commandline:
       admin: *admins
+  - irc.plugins.http_preview.HTTPPreview:
+      timeout: 1

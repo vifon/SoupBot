@@ -343,6 +343,29 @@ class IRCTests(unittest.TestCase):
                         " PRIVMSG #test-channel1"
                         " :A short but malicious \0 message."),
         ]
+
+    @conversation
+    def test_09_http_preview(self):
+        url = "http://127.0.0.1:8080"
+
+        return [
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+                     f" :{url}/simple-webpage",
+                     "PRIVMSG #test-channel1"
+                     f" :{self.admin.nick}: Simple Webpage"),
+            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+                        f" :{url}/malicious-webpage"),
+            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+                        f" :{url}/long-webpage"),
+            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+                        f" :{url}/redirecting-webpage"),
+            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+                        f" :{url}/redirecting-webpage-mutual"),
+            # Let's make sure it's still working after the above.
+            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+                     f" :{url}/simple-webpage",
+                     "PRIVMSG #test-channel1"
+                     f" :{self.admin.nick}: Simple Webpage"),
         ]
 
     @conversation
