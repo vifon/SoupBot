@@ -146,14 +146,15 @@ class IRCTests(unittest.TestCase):
 
     @conversation
     def test_05_offline_msg(self):
-        time = datetime.now().strftime("%H:%M")
+        time_re = r'\d\d:\d\d'
         return [
             # User absent, bot should notify him when he's back.
             SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
                         " :offline_user: Ping me when you get online."),
             SendRecv(":offline_user!offline@localhost JOIN #test-channel1",
-                     f"PRIVMSG #test-channel1 :{time} <{self.admin.nick}>"
-                     " offline_user: Ping me when you get online."),
+                     f"PRIVMSG #test-channel1 :{time_re} <{self.admin.nick}>"
+                     " offline_user: Ping me when you get online\.$",
+                     regexp=True),
 
             # User present, no notification expected.
             SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
@@ -167,8 +168,9 @@ class IRCTests(unittest.TestCase):
             SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
                         " :offline_user: Ping me again!"),
             SendRecv(":offline_user!offline@localhost JOIN #test-channel1",
-                     f"PRIVMSG #test-channel1 :{time} <{self.admin.nick}>"
-                     " offline_user: Ping me again!"),
+                     f"PRIVMSG #test-channel1 :{time_re} <{self.admin.nick}>"
+                     " offline_user: Ping me again!$",
+                     regexp=True),
             SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
         ]
 

@@ -35,9 +35,10 @@ class ConversationSend(ConversationStep):
 
 
 class ConversationRecv(ConversationStep):
-    def __init__(self, expected_resp, *args, **kwargs):
+    def __init__(self, expected_resp, *args, regexp=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.expected_resp = expected_resp
+        self.regexp = regexp
 
     async def __call__(self, test, logger):
         logger.debug("Expecting %s", self.expected_resp)
@@ -47,7 +48,10 @@ class ConversationRecv(ConversationStep):
             logger.error('Expected "%s", got nothing.', self.expected_resp)
             raise
         logger.debug("Received %s", received_resp)
-        test.assertEqual(str(received_resp), self.expected_resp)
+        if self.regexp:
+            test.assertRegex(str(received_resp), self.expected_resp)
+        else:
+            test.assertEqual(str(received_resp), self.expected_resp)
         await super().__call__(test, logger)
 
 
