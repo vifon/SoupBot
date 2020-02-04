@@ -359,6 +359,10 @@ class IRCTests(unittest.TestCase):
                         f" :{url}/malicious-webpage"),
             SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         f" :{url}/long-webpage"),
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
+                     f" :{url}/slow-webpage",
+                     "PRIVMSG #test-channel1"
+                     f" :{self.admin.nick}: Preview timed out."),
             SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         f" :{url}/redirecting-webpage"),
             SendIgnored(f"{self.admin} PRIVMSG #test-channel1"

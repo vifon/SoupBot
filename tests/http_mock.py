@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from flask import Flask, redirect
+import time
 
 
 def http_mock_server():
@@ -28,6 +29,11 @@ def http_mock_server():
     @app.route("/long-webpage")
     def long_webpage():
         return create_title("Long Webpage" * 100)
+
+    @app.route("/slow-webpage")
+    def slow_webpage():
+        time.sleep(5)
+        return create_title("Slow webpage")
 
     @app.route("/redirecting-webpage")
     def redirecting_webpage():
