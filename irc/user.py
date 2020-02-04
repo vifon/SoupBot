@@ -55,7 +55,7 @@ class IRCUser:
             return None
 
     def __repr__(self):
-        return f'<{__name__}.{type(self).__name__} "{str(self)}">'
+        return f'<{__name__}.{type(self).__name__} "{self}">'
 
     def __str__(self) -> str:
         def parts() -> Iterator[str]:

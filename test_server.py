@@ -123,7 +123,7 @@ class IRCTests(unittest.TestCase):
             join = await self.client.recv()
             channel = re.match(r'JOIN (.+)', str(join)).group(1)
             self.assertIn(channel, channels)
-            await self.client._send(f"{str(self.bot)} JOIN {channel}")
+            await self.client._send(f"{self.bot} JOIN {channel}")
             # The bot should ignore these lines for now.
             names = channels[channel]
             for coro in self.send_names(channel, " ".join(names)):
@@ -149,7 +149,7 @@ class IRCTests(unittest.TestCase):
         time_re = r'\d\d:\d\d'
         return [
             # User absent, bot should notify him when he's back.
-            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         " :offline_user: Ping me when you get online."),
             SendRecv(":offline_user!offline@localhost JOIN #test-channel1",
                      f"PRIVMSG #test-channel1 :{time_re} <{self.admin.nick}>"
@@ -157,7 +157,7 @@ class IRCTests(unittest.TestCase):
                      regexp=True),
 
             # User present, no notification expected.
-            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         " :offline_user: Don't ping me, as you're online."),
             SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
             SendIgnored(":offline_user!offline@localhost JOIN #test-channel1"),
@@ -165,7 +165,7 @@ class IRCTests(unittest.TestCase):
             # User's offline again, let's make sure he'll get only the
             # latest message and the previous won't get resent.
             SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
-            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         " :offline_user: Ping me again!"),
             SendRecv(":offline_user!offline@localhost JOIN #test-channel1",
                      f"PRIVMSG #test-channel1 :{time_re} <{self.admin.nick}>"
@@ -183,125 +183,125 @@ class IRCTests(unittest.TestCase):
         )
 
         return [
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :.score bacon",
                      "PRIVMSG #test-channel1 :bacon has no score."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :.scores",
                      "PRIVMSG #test-channel1 :End of scores."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      " :I like bacon++.",
                      "PRIVMSG #test-channel1 :bacon's score is now 1."),
 
-            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Send(f"{self.admin} PRIVMSG #test-channel1 :.scores"),
             Recv("PRIVMSG #test-channel1 :bacon's score is 1."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      " :++bacon is great.",
                      "PRIVMSG #test-channel1 :bacon's score is now 2."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      f" :{self.bot.nick}++",
                      "PRIVMSG #test-channel1"
                      f" :{self.bot.nick}'s score is now 1."),
 
-            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Send(f"{self.admin} PRIVMSG #test-channel1 :.scores"),
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
             Recv(f"PRIVMSG #test-channel1 :{self.bot.nick}'s score is 1."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      f" :{self.bot.nick}++",
                      "PRIVMSG #test-channel1"
                      f" :{self.bot.nick}'s score is now 2."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      f" :{self.bot.nick}++",
                      "PRIVMSG #test-channel1"
                      f" :{self.bot.nick}'s score is now 3."),
 
-            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Send(f"{self.admin} PRIVMSG #test-channel1 :.scores"),
             Recv(f"PRIVMSG #test-channel1 :{self.bot.nick}'s score is 3."),
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      f" :.descore {self.bot.nick}",
                      "PRIVMSG #test-channel1"
                      f" :{self.bot.nick}'s score erased."),
 
-            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Send(f"{self.admin} PRIVMSG #test-channel1 :.scores"),
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :bacon++",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :bacon++",
                      "PRIVMSG #test-channel1 :bacon's score is now 3."),
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      " :Screw bacon--",
                      "PRIVMSG #test-channel1 :bacon's score is now 2."),
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :++bacon",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :++bacon",
                      "PRIVMSG #test-channel1 :bacon's score is now 3."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :.score bacon",
                      "PRIVMSG #test-channel1 :bacon's score is 3."),
-            SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.score bacon",
+            SendRecv(f"{no_admin} PRIVMSG #test-channel1 :.score bacon",
                      "PRIVMSG #test-channel1 :bacon's score is 3."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :--bacon",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :--bacon",
                      "PRIVMSG #test-channel1 :bacon's score is now 2."),
 
-            SendIgnored(f"{str(no_admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{no_admin} PRIVMSG #test-channel1"
                         " :.descore bacon"),
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :.score bacon",
                      "PRIVMSG #test-channel1 :bacon's score is 2."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel2 :.score bacon",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel2 :.score bacon",
                      "PRIVMSG #test-channel2 :bacon has no score."),
 
-            Send(f"{str(self.admin)} PRIVMSG #test-channel2 :.scores"),
+            Send(f"{self.admin} PRIVMSG #test-channel2 :.scores"),
             Recv("PRIVMSG #test-channel2 :End of scores."),
 
-            SendIgnored(f"{str(self.admin)} PRIVMSG {self.bot.nick} :bacon++"),
+            SendIgnored(f"{self.admin} PRIVMSG {self.bot.nick} :bacon++"),
 
-            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
+            Send(f"{self.admin} PRIVMSG #test-channel1 :.scores"),
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
-            Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores 11"),
+            Send(f"{self.admin} PRIVMSG #test-channel1 :.scores 11"),
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
-            Send(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores"),
+            Send(f"{no_admin} PRIVMSG #test-channel1 :.scores"),
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
-            Send(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 10"),
+            Send(f"{no_admin} PRIVMSG #test-channel1 :.scores 10"),
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
-            SendIgnored(f"{str(no_admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{no_admin} PRIVMSG #test-channel1"
                         " :.descore bacon"),
 
-            SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 11",
+            SendRecv(f"{no_admin} PRIVMSG #test-channel1 :.scores 11",
                      f"PRIVMSG #test-channel1 :{no_admin.nick}:"
                      " Too many scores requested."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      " :.descore bacon",
                      f"PRIVMSG #test-channel1 :bacon's score erased."),
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :.score bacon",
                      "PRIVMSG #test-channel1 :bacon has no score."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores",
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1 :.scores",
                      "PRIVMSG #test-channel1 :End of scores."),
-            SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 10",
+            SendRecv(f"{no_admin} PRIVMSG #test-channel1 :.scores 10",
                      "PRIVMSG #test-channel1 :End of scores."),
-            SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 11",
+            SendRecv(f"{no_admin} PRIVMSG #test-channel1 :.scores 11",
                      f"PRIVMSG #test-channel1 :{no_admin.nick}:"
                      " Too many scores requested."),
 
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      f" :{self.admin.nick}++",
                      "PRIVMSG #test-channel1 "
                      f":{self.admin.nick}: No self-scoring!"),
@@ -316,32 +316,32 @@ class IRCTests(unittest.TestCase):
         )
 
         return [
-            SendIgnored(f"{str(no_admin)} PRIVMSG {self.bot.nick} :.raw"
+            SendIgnored(f"{no_admin} PRIVMSG {self.bot.nick} :.raw"
                         " PRIVMSG #test-channel1 test"),
-            SendRecv(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.raw"
+            SendRecv(f"{self.admin} PRIVMSG {self.bot.nick} :.raw"
                      " PRIVMSG #test-channel1 test",
                      "PRIVMSG #test-channel1 test"),
-            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1 :.raw"
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1 :.raw"
                         " PRIVMSG #test-channel1 test"),
-            SendRecv(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.part"
+            SendRecv(f"{self.admin} PRIVMSG {self.bot.nick} :.part"
                      " #test-channel2",
                      "PART #test-channel2"),
-            SendRecv(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.join"
+            SendRecv(f"{self.admin} PRIVMSG {self.bot.nick} :.join"
                      " #test-channel2",
                      "JOIN #test-channel2"),
-            SendIgnored(f"{str(no_admin)} PRIVMSG {self.bot.nick} :.part"
+            SendIgnored(f"{no_admin} PRIVMSG {self.bot.nick} :.part"
                         " #test-channel2"),
         ]
 
     @conversation
     def test_08_abuse_detection(self):
         return [
-            SendRecv(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.raw"
+            SendRecv(f"{self.admin} PRIVMSG {self.bot.nick} :.raw"
                      " PRIVMSG #test-channel1 :A short message.",
                      "PRIVMSG #test-channel1 :A short message."),
-            SendIgnored(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.raw"
+            SendIgnored(f"{self.admin} PRIVMSG {self.bot.nick} :.raw"
                         f" PRIVMSG #test-channel1 :A{' long' * 100} message."),
-            SendIgnored(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.raw"
+            SendIgnored(f"{self.admin} PRIVMSG {self.bot.nick} :.raw"
                         " PRIVMSG #test-channel1"
                         " :A short but malicious \0 message."),
         ]
@@ -351,20 +351,20 @@ class IRCTests(unittest.TestCase):
         url = "http://127.0.0.1:8080"
 
         return [
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      f" :{url}/simple-webpage",
                      "PRIVMSG #test-channel1"
                      f" :{self.admin.nick}: Simple Webpage"),
-            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         f" :{url}/malicious-webpage"),
-            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         f" :{url}/long-webpage"),
-            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         f" :{url}/redirecting-webpage"),
-            SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         f" :{url}/redirecting-webpage-mutual"),
             # Let's make sure it's still working after the above.
-            SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1"
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      f" :{url}/simple-webpage",
                      "PRIVMSG #test-channel1"
                      f" :{self.admin.nick}: Simple Webpage"),
