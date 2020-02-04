@@ -17,8 +17,8 @@ import re                            # noqa: F401
 import socket                        # noqa: F401
 import unittest                      # noqa: F401
 
-from lib.async_helpers import asynchronize, avait  # noqa: F401
-from lib.test.conversation import (                # noqa: F401
+from tests.async_helpers import asynchronize, avait  # noqa: F401
+from tests.conversation import (                     # noqa: F401
     ConversationDelay as Delay,
     ConversationNoResponse as NoResponse,
     ConversationRecv as Recv,

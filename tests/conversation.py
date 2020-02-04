@@ -1,6 +1,6 @@
 import asyncio
 
-from ..async_helpers import asynchronize, avait
+from .async_helpers import asynchronize, avait
 
 
 class ConversationStep:
@@ -42,7 +42,7 @@ class ConversationRecv(ConversationStep):
     async def __call__(self, test, logger):
         logger.debug("Expecting %s", self.expected_resp)
         try:
-            received_resp = await asyncio.wait_for(test.client.recv(), timeout=2)
+            received_resp = await asyncio.wait_for(test.client.recv(), timeout=5)
         except asyncio.TimeoutError:
             logger.error('Expected "%s", got nothing.', self.expected_resp)
             raise
