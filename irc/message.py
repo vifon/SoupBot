@@ -33,15 +33,19 @@ class IRCMessage:
         self.command: str = command
         self.args = args
         self.sender = sender
-        self.body = body
+        self._body = body
         self.raw = raw
+
+    @property
+    def body(self):
+        return self._body or self.args[-1]
 
     def sanitize(self):
         def isprintable(string):
             return all(not unicodedata.category(c) == 'Cc' for c in string)
 
-        if self.body is not None:
-            if not isprintable(self.body):
+        if self._body is not None:
+            if not isprintable(self._body):
                 raise InjectionError()
         for arg in self.args:
             if not isprintable(arg):
@@ -107,8 +111,8 @@ class IRCMessage:
 
             yield from self.args
 
-            if self.body:
-                yield f":{self.body}"
+            if self._body:
+                yield f":{self._body}"
 
         if self.raw and not self.command:
             return self.raw
