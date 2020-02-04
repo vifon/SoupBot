@@ -28,7 +28,7 @@ class IRCPlugin:
         else:
             self.shared_data = self._shared_data_init()
 
-    async def start(self) -> None:
+    def start(self) -> None:
         """Called when all the plugins are already loaded."""
         pass
 
