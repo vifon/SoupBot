@@ -147,37 +147,29 @@ class IRCTests(unittest.TestCase):
     @conversation
     def test_05_offline_msg(self):
         time = datetime.now().strftime("%H:%M")
-        delay = 0.2
         return [
             # User absent, bot should notify him when he's back.
             SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
-                        " :offline_user: Ping me when you get online.",
-                        timeout=delay),
+                        " :offline_user: Ping me when you get online."),
             SendRecv(":offline_user!offline@localhost JOIN #test-channel1",
                      f"PRIVMSG #test-channel1 :{time} <{self.admin.nick}>"
                      " offline_user: Ping me when you get online."),
 
             # User present, no notification expected.
             SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
-                        " :offline_user: Don't ping me, as you're online.",
-                        timeout=delay),
-            SendIgnored(":offline_user!offline@localhost PART #test-channel1",
-                        timeout=delay),
-            SendIgnored(":offline_user!offline@localhost JOIN #test-channel1",
-                        timeout=delay),
+                        " :offline_user: Don't ping me, as you're online."),
+            SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
+            SendIgnored(":offline_user!offline@localhost JOIN #test-channel1"),
 
             # User's offline again, let's make sure he'll get only the
             # latest message and the previous won't get resent.
-            SendIgnored(":offline_user!offline@localhost PART #test-channel1",
-                        timeout=delay),
+            SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
             SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1"
-                        " :offline_user: Ping me again!",
-                        timeout=delay),
+                        " :offline_user: Ping me again!"),
             SendRecv(":offline_user!offline@localhost JOIN #test-channel1",
                      f"PRIVMSG #test-channel1 :{time} <{self.admin.nick}>"
                      " offline_user: Ping me again!"),
-            SendIgnored(":offline_user!offline@localhost PART #test-channel1",
-                        timeout=delay),
+            SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
         ]
 
     @conversation
@@ -258,8 +250,7 @@ class IRCTests(unittest.TestCase):
                      "PRIVMSG #test-channel1 :bacon's score is now 2."),
 
             SendIgnored(f"{str(no_admin)} PRIVMSG #test-channel1"
-                        " :.descore bacon",
-                        timeout=0.2),
+                        " :.descore bacon"),
             SendRecv(f"{str(self.admin)} PRIVMSG #test-channel1 :.score bacon",
                      "PRIVMSG #test-channel1 :bacon's score is 2."),
 
@@ -269,8 +260,7 @@ class IRCTests(unittest.TestCase):
             Send(f"{str(self.admin)} PRIVMSG #test-channel2 :.scores"),
             Recv("PRIVMSG #test-channel2 :End of scores."),
 
-            SendIgnored(f"{str(self.admin)} PRIVMSG {self.bot.nick} :bacon++",
-                        timeout=0.2),
+            SendIgnored(f"{str(self.admin)} PRIVMSG {self.bot.nick} :bacon++"),
 
             Send(f"{str(self.admin)} PRIVMSG #test-channel1 :.scores"),
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
@@ -289,8 +279,7 @@ class IRCTests(unittest.TestCase):
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
             SendIgnored(f"{str(no_admin)} PRIVMSG #test-channel1"
-                        " :.descore bacon",
-                        timeout=0.2),
+                        " :.descore bacon"),
 
             SendRecv(f"{str(no_admin)} PRIVMSG #test-channel1 :.scores 11",
                      f"PRIVMSG #test-channel1 :{no_admin.nick}:"
@@ -326,14 +315,12 @@ class IRCTests(unittest.TestCase):
 
         return [
             SendIgnored(f"{str(no_admin)} PRIVMSG {self.bot.nick} :.raw"
-                        " PRIVMSG #test-channel1 test",
-                        timeout=0.2),
+                        " PRIVMSG #test-channel1 test"),
             SendRecv(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.raw"
                      " PRIVMSG #test-channel1 test",
                      "PRIVMSG #test-channel1 test"),
             SendIgnored(f"{str(self.admin)} PRIVMSG #test-channel1 :.raw"
-                        " PRIVMSG #test-channel1 test",
-                        timeout=0.2),
+                        " PRIVMSG #test-channel1 test"),
             SendRecv(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.part"
                      " #test-channel2",
                      "PART #test-channel2"),
@@ -341,8 +328,7 @@ class IRCTests(unittest.TestCase):
                      " #test-channel2",
                      "JOIN #test-channel2"),
             SendIgnored(f"{str(no_admin)} PRIVMSG {self.bot.nick} :.part"
-                        " #test-channel2",
-                        timeout=0.2),
+                        " #test-channel2"),
         ]
 
     @conversation
@@ -352,12 +338,11 @@ class IRCTests(unittest.TestCase):
                      " PRIVMSG #test-channel1 :A short message.",
                      "PRIVMSG #test-channel1 :A short message."),
             SendIgnored(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.raw"
-                        f" PRIVMSG #test-channel1 :A{' long' * 100} message.",
-                        timeout=0.2),
+                        f" PRIVMSG #test-channel1 :A{' long' * 100} message."),
             SendIgnored(f"{str(self.admin)} PRIVMSG {self.bot.nick} :.raw"
                         " PRIVMSG #test-channel1"
-                        " :A short but malicious \0 message.",
-                        timeout=0.2),
+                        " :A short but malicious \0 message."),
+        ]
         ]
 
     @conversation
