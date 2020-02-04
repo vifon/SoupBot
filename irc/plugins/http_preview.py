@@ -20,6 +20,7 @@ class HTTPPreview(IRCPlugin):
             channel = msg.args[0]
             nick = msg.sender.nick
             for url in self.extractor.gen_urls(msg.body):
+                self.logger.info("Generating preview for: %s", url)
                 try:
                     async with aiohttp.ClientSession() as session:
                         try:
@@ -27,6 +28,7 @@ class HTTPPreview(IRCPlugin):
                                 fetch(session, url),
                                 timeout=self.config.get('timeout', 10),
                             )
+                            self.logger.debug("%s fetched.", url)
                             loop = asyncio.get_event_loop()
                             soup = await asyncio.wait_for(
                                 loop.run_in_executor(
@@ -37,6 +39,7 @@ class HTTPPreview(IRCPlugin):
                                 # sane webpages.
                                 timeout=2,
                             )
+                            self.logger.debug("%s parsed.", url)
                         except asyncio.TimeoutError:
                             self.client.send(IRCMessage(
                                 'PRIVMSG', channel,
@@ -45,6 +48,9 @@ class HTTPPreview(IRCPlugin):
                             raise
                         else:
                             title = soup.title.get_text()
+                            self.logger.debug(
+                                "%s title extracted: %s", url, title
+                            )
                             self.client.send(IRCMessage(
                                 'PRIVMSG', channel,
                                 body=f"{nick}: {title}",
