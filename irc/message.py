@@ -51,7 +51,7 @@ class IRCMessage:
             if not isprintable(arg):
                 raise InjectionError()
 
-        if len(str(self)) > 512:
+        if len(str(self).encode()) > 512:
             raise ExcessiveLengthError()
 
     @classmethod
