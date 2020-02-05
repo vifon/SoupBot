@@ -367,11 +367,12 @@ class IRCTests(unittest.TestCase):
                         f" :{url}/redirecting-webpage"),
             SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
                         f" :{url}/redirecting-webpage-mutual"),
-            # Let's make sure it's still working after the above.
-            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
-                     f" :{url}/simple-webpage",
-                     "PRIVMSG #test-channel1"
-                     f" :{self.admin.nick}: Simple Webpage"),
+            Send(f"{self.admin} PRIVMSG #test-channel1"
+                 f" :{url}/simple-webpage and {url}/another-webpage"),
+            Recv("PRIVMSG #test-channel1"
+                 f" :{self.admin.nick}: Simple Webpage"),
+            Recv("PRIVMSG #test-channel1"
+                 f" :{self.admin.nick}: Another Webpage"),
         ]
 
     @conversation

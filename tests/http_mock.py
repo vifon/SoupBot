@@ -22,6 +22,10 @@ def http_mock_server():
     def simple_webpage():
         return create_title("Simple Webpage")
 
+    @app.route("/another-webpage")
+    def another_webpage():
+        return create_title("Another Webpage")
+
     @app.route("/malicious-webpage")
     def malicious_webpage():
         return create_title("Malicious &#0; Webpage")
