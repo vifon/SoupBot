@@ -147,31 +147,38 @@ class IRCTests(unittest.TestCase):
     @conversation
     def test_05_offline_msg(self):
         time_re = r'\d\d:\d\d'
+
+        user = IRCUser(
+            nick="offline_user",
+            user="offline",
+            host="localhost",
+        )
+
         return [
             # User absent, bot should notify him when he's back.
             SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
-                        " :offline_user: Ping me when you get online."),
-            SendRecv(":offline_user!offline@localhost JOIN #test-channel1",
+                        f" :{user.nick}: Ping me when you get online."),
+            SendRecv(f"{user} JOIN #test-channel1",
                      f"PRIVMSG #test-channel1 :{time_re} <{self.admin.nick}>"
-                     " offline_user: Ping me when you get online\.$",
+                     f" {user.nick}: Ping me when you get online\.$",
                      regexp=True),
 
             # User present, no notification expected.
             SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
-                        " :offline_user: Don't ping me, as you're online."),
-            SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
-            SendIgnored(":offline_user!offline@localhost JOIN #test-channel1"),
+                        f" :{user.nick}: Don't ping me, as you're online."),
+            SendIgnored(f"{user} PART #test-channel1"),
+            SendIgnored(f"{user} JOIN #test-channel1"),
 
             # User's offline again, let's make sure he'll get only the
             # latest message and the previous won't get resent.
-            SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
+            SendIgnored(f"{user} PART #test-channel1"),
             SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
-                        " :offline_user: Ping me again!"),
-            SendRecv(":offline_user!offline@localhost JOIN #test-channel1",
+                        f" :{user.nick}: Ping me again!"),
+            SendRecv(f"{user} JOIN #test-channel1",
                      f"PRIVMSG #test-channel1 :{time_re} <{self.admin.nick}>"
-                     " offline_user: Ping me again!$",
+                     f" {user.nick}: Ping me again!$",
                      regexp=True),
-            SendIgnored(":offline_user!offline@localhost PART #test-channel1"),
+            SendIgnored(f"{user} PART #test-channel1"),
         ]
 
     @conversation
