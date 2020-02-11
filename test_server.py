@@ -160,7 +160,7 @@ class IRCTests(unittest.TestCase):
                         f" :{user.nick}: Ping me when you get online."),
             SendRecv(f"{user} JOIN #test-channel1",
                      f"PRIVMSG #test-channel1 :{time_re} <{self.admin.nick}>"
-                     f" {user.nick}: Ping me when you get online\.$",
+                     f" {user.nick}: Ping me when you get online\\.$",
                      regexp=True),
 
             # User present, no notification expected.
