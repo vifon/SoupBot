@@ -1,5 +1,10 @@
 from irc.message import IRCMessage
-from irc.plugin import IRCPlugin, IRCCommandPlugin
+from irc.plugin import (
+    IRCCommandPlugin,
+    IRCPlugin,
+    NotAuthorizedError,
+    authenticated,
+)
 import itertools
 import re
 
@@ -24,7 +29,15 @@ class UserScoreQueryMixin(IRCCommandPlugin):
     async def __list_scores(self, sender, channel, match, msg):
         count = int(match[1] or 5)
         max_request = self.config['max_scoreboard_request'] or 10
-        if count > max_request and not self.auth(sender):
+
+        try:
+            self.auth(sender, channel)
+        except NotAuthorizedError:
+            auth = False
+        else:
+            auth = True
+
+        if count > max_request and not auth:
             self.client.send(IRCMessage(
                 'PRIVMSG', channel,
                 body=f"{sender.nick}: Too many scores requested."
@@ -56,10 +69,8 @@ class UserScoreEraseMixin(IRCCommandPlugin):
             r'\.descore +(\w+)': self.__erase_scores,
         })
 
+    @authenticated
     async def __erase_scores(self, sender, channel, match, msg):
-        if not self.auth(sender):
-            return
-
         nick = match[1]
         c = self.db.cursor()
         c.execute(

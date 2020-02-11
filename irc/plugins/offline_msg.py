@@ -1,7 +1,12 @@
 from collections import defaultdict
 from datetime import datetime
 from irc.message import IRCMessage
-from irc.plugin import IRCPlugin, IRCCommandPlugin
+from irc.plugin import (
+    IRCCommandPlugin,
+    IRCPlugin,
+    NotAuthorizedError,
+    authenticated,
+)
 import itertools
 import re
 
@@ -14,31 +19,31 @@ class OfflineMessagesDynamic(IRCCommandPlugin):
             r'.offline_del +(\w+)$': self.__del,
         })
 
-    async def __add(self, sender, channel, match, msg):
-        auth = self.auth(sender) and channel.startswith("#")
-        if auth:
-            self.shared_data[channel].add(match[1])
-            self.client.send(IRCMessage(
-                'PRIVMSG', channel,
-                body=f"Understood, I'll keep the messages for {match[1]}."
-            ))
-        self.logger.debug(
-            "Currently saving messages for: %s", dict(self.shared_data)
-        )
-        return auth
+    def auth(self, sender, channel):
+        super().auth(sender, channel)
+        if not channel.startswith("#"):
+            raise NotAuthorizedError(sender, channel)
 
-    async def __del(self, sender, channel, match, msg):
-        auth = self.auth(sender) and channel.startswith("#")
-        if auth:
-            self.shared_data[channel].discard(match[1])
-            self.client.send(IRCMessage(
-                'PRIVMSG', channel,
-                body=f"Understood, I'll stop keeping messages for {match[1]}."
-            ))
+    @authenticated
+    async def __add(self, sender, channel, match, msg):
+        self.shared_data[channel].add(match[1])
+        self.client.send(IRCMessage(
+            'PRIVMSG', channel,
+            body=f"Understood, I'll keep the messages for {match[1]}."
+        ))
         self.logger.debug(
             "Currently saving messages for: %s", dict(self.shared_data)
         )
-        return auth
+        return True
+
+    @authenticated
+    async def __del(self, sender, channel, match, msg):
+        self.shared_data[channel].discard(match[1])
+        self.client.send(IRCMessage(
+            'PRIVMSG', channel,
+            body=f"Understood, I'll stop keeping messages for {match[1]}."
+        ))
+        return True
 
 
 class OfflineMessages(OfflineMessagesDynamic, IRCPlugin):

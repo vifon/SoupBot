@@ -1,5 +1,5 @@
 from irc.message import IRCMessage
-from irc.plugin import IRCCommandPlugin
+from irc.plugin import IRCCommandPlugin, NotAuthorizedError, authenticated
 
 
 class Commandline(IRCCommandPlugin):
@@ -11,17 +11,19 @@ class Commandline(IRCCommandPlugin):
             r'\.raw +(.+)$': self.__raw,
         })
 
-    async def react(self, msg):
-        if msg.command == 'PRIVMSG':
-            channel = msg.args[0]
-            if self.auth(msg.sender) and channel == self.client.nick:
-                await super().react(msg)
+    def auth(self, sender, channel):
+        super().auth(sender, channel)
+        if channel != self.client.nick:
+            raise NotAuthorizedError(sender, channel)
 
+    @authenticated
     async def __join(self, sender, channel, match, msg):
         self.client.send(IRCMessage('JOIN', match[1]))
 
+    @authenticated
     async def __part(self, sender, channel, match, msg):
         self.client.send(IRCMessage('PART', match[1]))
 
+    @authenticated
     async def __raw(self, sender, channel, match, msg):
         self.client.send(match[1])

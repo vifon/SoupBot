@@ -1,3 +1,4 @@
+from functools import wraps
 import asyncio
 import re
 
@@ -6,6 +7,12 @@ if TYPE_CHECKING:  # pragma: no cover
     from irc.client import IRCClient    # noqa: F401
     from irc.message import IRCMessage  # noqa: F401
     import sqlite3                      # noqa: F401
+
+
+class NotAuthorizedError(Exception):
+    def __init__(self, sender=None, channel=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sender = sender
 
 
 class IRCPlugin:
@@ -78,8 +85,9 @@ class IRCPlugin:
     def db(self) -> 'sqlite3.Connection':
         return self.client.db
 
-    def auth(self, sender):
-        return sender.identity in self.config['admin']
+    def auth(self, sender, channel):
+        if sender.identity not in self.config['admin']:
+            raise NotAuthorizedError(sender, channel)
 
 
 class IRCCommandPlugin(IRCPlugin):
@@ -88,6 +96,10 @@ class IRCCommandPlugin(IRCPlugin):
         self.commands: Dict[str, Callable] = {}
 
     async def react(self, msg: 'IRCMessage') -> Optional[bool]:
+        """The return value marks whether to halt the execution of the other
+        commands.  False means continue, True means halt.
+
+        """
         if msg.command == 'PRIVMSG':
             assert msg.body is not None
             assert msg.sender is not None
@@ -109,3 +121,21 @@ class IRCCommandPlugin(IRCPlugin):
             msg: 'IRCMessage',
     ) -> Optional[bool]:
         raise NotImplementedError()
+
+
+def authenticated(method):
+    @wraps(method)
+    async def inner(self, sender, channel, *args, **kwargs):
+        try:
+            self.auth(sender, channel)
+        except NotAuthorizedError:
+            self.logger.warn(
+                'Authentication error in %s for %s on %s',
+                method.__name__,
+                sender,
+                channel,
+            )
+            return True
+        else:
+            return await method(self, sender, channel, *args, **kwargs)
+    return inner
