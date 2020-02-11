@@ -76,7 +76,7 @@ class NameTrack(IRCPlugin):
             nicks = await nicks_coro
             if old_nick in nicks:
                 self.logger.info(
-                    "%s is not known as %s on %s",
+                    "%s is now known as %s on %s",
                     old_nick, new_nick, channel
                 )
                 nicks.discard(old_nick)
