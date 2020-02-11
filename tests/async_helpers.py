@@ -1,3 +1,4 @@
+from functools import wraps
 import asyncio
 
 
@@ -15,6 +16,7 @@ def asynchronize(coro):
     tested functions are async.
 
     """
+    @wraps(coro)
     def sync_fun(*args, **kwargs):
         return avait(coro(*args, **kwargs))
     return sync_fun

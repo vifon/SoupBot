@@ -1,3 +1,4 @@
+from functools import wraps
 import asyncio
 
 from .async_helpers import asynchronize, avait
@@ -84,6 +85,7 @@ class ConversationSendRecv(ConversationSend, ConversationRecv):
 
 
 def conversation(orig_test):
+    @wraps(orig_test)
     @asynchronize
     async def real_test(self):
         exchange = orig_test(self)
