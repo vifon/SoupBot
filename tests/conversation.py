@@ -57,7 +57,7 @@ class ConversationRecv(ConversationStep):
 
 
 class ConversationNoResponse(ConversationStep):
-    def __init__(self, timeout=0.2, *args, **kwargs):
+    def __init__(self, timeout=0.01, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.timeout = timeout
 
