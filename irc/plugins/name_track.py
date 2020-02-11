@@ -72,8 +72,9 @@ class NameTrack(IRCPlugin):
         names.discard(nick)
 
     async def rename(self, old_nick, new_nick):
-        for channel, nicks in self.shared_data.items():
-            if old_nick in await nicks:
+        for channel, nicks_coro in self.shared_data.items():
+            nicks = await nicks_coro
+            if old_nick in nicks:
                 self.logger.info(
                     "%s is not known as %s on %s",
                     old_nick, new_nick, channel
