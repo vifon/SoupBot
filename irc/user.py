@@ -1,6 +1,6 @@
 import re
 
-from typing import Iterator
+from typing import Iterator, Optional
 
 
 class ParseError(Exception):
@@ -10,7 +10,7 @@ class ParseError(Exception):
 class IRCUser:
     def __init__(
             self,
-            nick,
+            nick: str,
             user: str = None,
             host: str = None,
             raw: str = None
@@ -48,13 +48,13 @@ class IRCUser:
         return user
 
     @property
-    def identity(self):
+    def identity(self) -> Optional[str]:
         if self.user and self.host:
             return f"{self.user}@{self.host}"
         else:
             return None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<{__name__}.{type(self).__name__} "{self}">'
 
     def __str__(self) -> str:

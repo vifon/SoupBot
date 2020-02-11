@@ -37,11 +37,11 @@ class IRCMessage:
         self.raw = raw
 
     @property
-    def body(self):
+    def body(self) -> str:
         return self._body or self.args[-1]
 
-    def sanitize(self):
-        def isprintable(string):
+    def sanitize(self) -> None:
+        def isprintable(string: str) -> bool:
             return all(not unicodedata.category(c) == 'Cc' for c in string)
 
         if self._body is not None:
@@ -99,7 +99,7 @@ class IRCMessage:
         )
         return msg
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<{__name__}.{type(self).__name__} "{self}">'
 
     def __str__(self) -> str:

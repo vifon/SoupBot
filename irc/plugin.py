@@ -2,17 +2,24 @@ from functools import wraps
 import asyncio
 import re
 
-from typing import TYPE_CHECKING, Dict, Any, Callable, Match, Optional
+from typing import \
+    TYPE_CHECKING, Dict, Any, Awaitable, Callable, Match, Optional
 if TYPE_CHECKING:  # pragma: no cover
     from irc.client import IRCClient    # noqa: F401
     from irc.message import IRCMessage  # noqa: F401
+    from irc.user import IRCUser        # noqa: F401
     import sqlite3                      # noqa: F401
 
 
 class NotAuthorizedError(Exception):
-    def __init__(self, sender=None, channel=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+            self,
+            sender: 'IRCUser' = None,
+            channel: str = None,
+    ):
+        super().__init__()
         self.sender = sender
+        self.channel = channel
 
 
 class IRCPlugin:
@@ -39,7 +46,7 @@ class IRCPlugin:
         """Called when all the plugins are already loaded."""
         pass
 
-    async def event_loop(self):
+    async def event_loop(self) -> None:
         try:
             while True:
                 msg = await self.queue.get()
@@ -58,7 +65,7 @@ class IRCPlugin:
         finally:
             self.logger.info("%s has finished.", self)
 
-    async def react(self, msg: 'IRCMessage'):
+    async def react(self, msg: 'IRCMessage') -> Any:
         """React to the received message in some way."""
         pass
 
@@ -85,7 +92,7 @@ class IRCPlugin:
     def db(self) -> 'sqlite3.Connection':
         return self.client.db
 
-    def auth(self, sender, channel):
+    def auth(self, sender: 'IRCUser', channel: str) -> None:
         if sender.identity not in self.config['admin']:
             raise NotAuthorizedError(sender, channel)
 
@@ -93,7 +100,10 @@ class IRCPlugin:
 class IRCCommandPlugin(IRCPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.commands: Dict[str, Callable] = {}
+        self.commands: Dict[str, Callable[
+            ['IRCUser', str, Match, 'IRCMessage'],
+            Awaitable[Optional[bool]],
+        ]] = {}
 
     async def react(self, msg: 'IRCMessage') -> Optional[bool]:
         """The return value marks whether to halt the execution of the other
@@ -115,7 +125,7 @@ class IRCCommandPlugin(IRCPlugin):
 
     async def command(
             self,
-            sender: str,
+            sender: 'IRCUser',
             channel: str,
             match: Match,
             msg: 'IRCMessage',
@@ -123,9 +133,16 @@ class IRCCommandPlugin(IRCPlugin):
         raise NotImplementedError()
 
 
-def authenticated(method):
+def authenticated(
+        method: Callable[..., Awaitable[Optional[bool]]]) -> Callable:
     @wraps(method)
-    async def inner(self, sender, channel, *args, **kwargs):
+    async def inner(
+            self: IRCCommandPlugin,
+            sender: 'IRCUser',
+            channel: str,
+            *args: Any,
+            **kwargs: Any,
+    ):
         try:
             self.auth(sender, channel)
         except NotAuthorizedError:

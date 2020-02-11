@@ -17,13 +17,13 @@ class Commandline(IRCCommandPlugin):
             raise NotAuthorizedError(sender, channel)
 
     @authenticated
-    async def __join(self, sender, channel, match, msg):
+    async def __join(self, sender, channel, match, msg) -> None:
         self.client.send(IRCMessage('JOIN', match[1]))
 
     @authenticated
-    async def __part(self, sender, channel, match, msg):
+    async def __part(self, sender, channel, match, msg) -> None:
         self.client.send(IRCMessage('PART', match[1]))
 
     @authenticated
-    async def __raw(self, sender, channel, match, msg):
+    async def __raw(self, sender, channel, match, msg) -> None:
         self.client.send(match[1])

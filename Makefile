@@ -17,7 +17,7 @@ test: pylint flake8 typing unittest
 .PHONY: clean
 clean:
 	rm -f .coverage
-	rm -rf htmlcov .mypy_cache
+	rm -rf htmlcov .mypy_cache mypy-coverage
 	find */ -name __pycache__ -exec rm -rf '{}' +
 
 
@@ -31,7 +31,15 @@ flake8:
 
 .PHONY: typing
 typing:
-	mypy --namespace-packages -m bot -m irc.client -m irc.plugin -m irc.message -m irc.user
+	mypy --pretty -m bot -p irc
+
+.PHONY: coverage-typing
+coverage-typing: mypy-coverage/index.html
+	xdg-open file://$(PWD)/$<
+
+mypy-coverage/index.html: $(PY_SOURCES)
+	mypy --pretty -m bot -p irc --html-report mypy-coverage
+
 
 .PHONY: unittest
 unittest:
@@ -47,7 +55,7 @@ coverage: .coverage
 
 .PHONY: coverage-html
 coverage-html: htmlcov/index.html
-	xdg-open file://$(PWD)/htmlcov/index.html
+	xdg-open file://$(PWD)/$<
 
 htmlcov/index.html: .coverage
 	coverage html

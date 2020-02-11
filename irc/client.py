@@ -60,7 +60,7 @@ class IRCClient:
     def at_eof(self) -> bool:
         return self.socket.reader.at_eof()
 
-    def send(self, msg: Union[IRCMessage, str]):
+    def send(self, msg: Union[IRCMessage, str]) -> None:
         self.outgoing_queue.put_nowait(msg)
 
     async def _send(
