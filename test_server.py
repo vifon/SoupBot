@@ -182,7 +182,53 @@ class IRCTests(unittest.TestCase):
         ]
 
     @conversation
-    def test_06_rating(self):
+    def test_06_offline_msg_dynamic(self):
+        time_re = r'\d\d:\d\d'
+
+        untracked = IRCUser(
+            nick="untracked_user",
+            user="untracked",
+            host="localhost",
+        )
+
+        return [
+            # User absent, but not on the list.
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
+                        f" :{untracked.nick}: Ping me when you get online."),
+            SendIgnored(f"{untracked} JOIN #test-channel1"),
+            SendIgnored(f"{untracked} PART #test-channel1"),
+
+            # Add the user to the list with managed offline messages.
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
+                     f" :.offline_add {untracked.nick}",
+                     f"PRIVMSG #test-channel1 :Understood,"
+                     f" I'll keep the messages for {untracked.nick}\\.$",
+                     regexp=True),
+
+            # User absent, and now on the list.
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
+                        f" :{untracked.nick}: Ping me when you get online."),
+            SendRecv(f"{untracked} JOIN #test-channel1",
+                     f"PRIVMSG #test-channel1 :{time_re} <{self.admin.nick}>"
+                     f" {untracked.nick}: Ping me when you get online\\.$",
+                     regexp=True),
+            SendIgnored(f"{untracked} PART #test-channel1"),
+
+            # Remove the user from the list with managed offline messages.
+            SendRecv(f"{self.admin} PRIVMSG #test-channel1"
+                     f" :.offline_del {untracked.nick}",
+                     f"PRIVMSG #test-channel1 :Understood,"
+                     f" I'll stop keeping messages for {untracked.nick}."),
+
+            # User absent, and once again not on the list.
+            SendIgnored(f"{self.admin} PRIVMSG #test-channel1"
+                        f" :{untracked.nick}: Ping me when you get online."),
+            SendIgnored(f"{untracked} JOIN #test-channel1"),
+            SendIgnored(f"{untracked} PART #test-channel1"),
+        ]
+
+    @conversation
+    def test_07_rating(self):
         no_admin = IRCUser(
             nick='someguy',
             user='nobody',
@@ -315,7 +361,7 @@ class IRCTests(unittest.TestCase):
         ]
 
     @conversation
-    def test_07_commandline(self):
+    def test_08_commandline(self):
         no_admin = IRCUser(
             nick='someguy',
             user='nobody',
@@ -341,7 +387,7 @@ class IRCTests(unittest.TestCase):
         ]
 
     @conversation
-    def test_08_abuse_detection(self):
+    def test_09_abuse_detection(self):
         return [
             SendRecv(f"{self.admin} PRIVMSG {self.bot.nick} :.raw"
                      " PRIVMSG #test-channel1 :A short message.",
@@ -354,7 +400,7 @@ class IRCTests(unittest.TestCase):
         ]
 
     @conversation
-    def test_09_http_preview(self):
+    def test_10_http_preview(self):
         url = "http://127.0.0.1:8080"
 
         return [
