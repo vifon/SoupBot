@@ -15,8 +15,8 @@ class OfflineMessagesDynamic(IRCCommandPlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.commands.update({
-            r'.offline_add +(\w+)$': self.__add,
-            r'.offline_del +(\w+)$': self.__del,
+            r'\.offline_add +(\w+)$': self.__add,
+            r'\.offline_del +(\w+)$': self.__del,
         })
 
     def auth(self, sender, channel):
