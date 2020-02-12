@@ -10,8 +10,9 @@ import httpx
 class HTTPPreview(IRCPlugin):
     extractor = URLExtract()
 
-    async def react(self, msg):
+    async def react(self, msg: IRCMessage) -> None:
         if msg.command == 'PRIVMSG':
+            assert msg.sender is not None
             channel = msg.args[0]
             nick = msg.sender.nick
             async with httpx.AsyncClient() as client:
@@ -44,7 +45,7 @@ class HTTPPreview(IRCPlugin):
                             ))
                             raise
                         else:
-                            title = soup.title.get_text()
+                            title: str = soup.title.get_text()
                             self.logger.debug(
                                 "%s title extracted: %s", url, title
                             )
