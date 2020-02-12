@@ -19,31 +19,31 @@ class defaultdict_with_key(defaultdict):
 class NameTrack(IRCPlugin):
     shared_data: Dict[str, Awaitable[Set[str]]]
 
-    async def react(self, msg: IRCMessage):
-        async def JOIN(msg: IRCMessage):
+    async def react(self, msg: IRCMessage) -> None:
+        async def JOIN(msg: IRCMessage) -> None:
             assert msg.sender is not None
             channel = msg.args[0]
             nick = msg.sender.nick
             await self.acknowledge(channel, nick)
 
-        async def PART(msg: IRCMessage):
+        async def PART(msg: IRCMessage) -> None:
             assert msg.sender is not None
             channel = msg.args[0]
             nick = msg.sender.nick
             await self.forget(channel, nick)
 
-        async def QUIT(msg: IRCMessage):
+        async def QUIT(msg: IRCMessage) -> None:
             assert msg.sender is not None
             nick = msg.sender.nick
             for channel, nicks in self.shared_data.items():
                 if nick in await nicks:
                     await self.forget(channel, nick)
 
-        async def KICK(msg: IRCMessage):
+        async def KICK(msg: IRCMessage) -> None:
             channel, nick = msg.args
             await self.forget(channel, nick)
 
-        async def NICK(msg: IRCMessage):
+        async def NICK(msg: IRCMessage) -> None:
             assert msg.sender is not None
             old_nick = msg.sender.nick
             new_nick = msg.body
@@ -69,17 +69,17 @@ class NameTrack(IRCPlugin):
         self.logger.info("Nicks on %s: %s", channel, names)
         return names
 
-    async def acknowledge(self, channel: str, nick: str):
+    async def acknowledge(self, channel: str, nick: str) -> None:
         self.logger.info("%s joined %s, acknowledging…", nick, channel)
         names = await self.shared_data[channel]
         names.add(nick)
 
-    async def forget(self, channel: str, nick: str):
+    async def forget(self, channel: str, nick: str) -> None:
         self.logger.info("%s left %s, forgetting…", nick, channel)
         names = await self.shared_data[channel]
         names.discard(nick)
 
-    async def rename(self, old_nick: str, new_nick: str):
+    async def rename(self, old_nick: str, new_nick: str) -> None:
         for channel, nicks_coro in self.shared_data.items():
             nicks = await nicks_coro
             if old_nick in nicks:
