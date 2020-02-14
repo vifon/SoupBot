@@ -45,7 +45,7 @@ class HTTPPreview(IRCPlugin):
                             ))
                             raise
                         else:
-                            title: str = soup.title.get_text()
+                            title: str = soup.title.get_text().strip()
                             self.logger.debug(
                                 "%s title extracted: %s", url, title
                             )
