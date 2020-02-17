@@ -3,7 +3,7 @@ port: 7000
 ssl: true
 
 bot:
-  nick: Wydrek
+  nick: SoupBot
   name: A pluggable IRC bot
   sqlite_db: bot.db
 

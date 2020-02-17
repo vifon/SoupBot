@@ -1,7 +1,7 @@
-IRCBot
-======
+SoupBot
+=======
 
-IRCBot is a yet another extensible IRC bot.  It's implemented using
+SoupBot is a yet another extensible IRC bot.  It's implemented using
 `asyncio` and raw sockets for IRC communication.  It uses YAML for
 configuration.
 
