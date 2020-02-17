@@ -1,15 +1,51 @@
 IRCBot
 ======
 
-TODO
+IRCBot is a yet another extensible IRC bot.  It's implemented using
+`asyncio` and raw sockets for IRC communication.  It uses YAML for
+configuration.
+
+DEPENDENCIES
+------------
+
+- Python 3.6+
+- libraries listed in `requirements.txt`
 
 RUNNING
 -------
+
+1. (optional) Prepare a virtualenv:
+
+        $ virtualenv .venv
+        $ . .venv/bin/activate
+
+2. Install the dependencies:
+
+        $ pip install -r requirements.txt
+        $ pip install -r requirements-plugins.txt  # needed only for some plugins
+
+3. Edit the config (example in `bot_config.example.yml`) and run:
+
+        $ ./bot.py your_config.yml
 
 **Docker**
 
     # docker build -t ircbot .
     # docker run -d -v $PWD/bot_config.yml:/home/app/config.yml:ro ircbot
+
+EXTENDING
+---------
+
+The `plugins` section in the config file may contain an arbitrary
+Python module path with a class name on its end, e.g
+`irc.plugins.my_new_plugin.MyPluginClass` though it doesn't need to
+start with `irc.plugins`.  To create a new plugin class, inherit from
+`irc.plugin.IRCPlugin` or one of its subclasses and override the
+`react()` method-coroutine.  The existing plugins should be enough of
+an example, `irc.plugins.pong.PongPlugin` is a good start.  Each
+plugin works asynchronously and shouldn't interfere with the others as
+long as the `react()` method isn't making any lengthy synchronous
+calls.
 
 COPYRIGHT
 ---------
