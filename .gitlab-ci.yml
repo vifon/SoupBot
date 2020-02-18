@@ -1,0 +1,29 @@
+default:
+  image: python:3.7
+  before_script:
+    - pip install -r requirements-test.txt
+
+
+tests:
+  stage: test
+  script:
+    - pip install -r requirements-plugins.txt
+    - ./test.sh -v
+
+test-coverage:
+  stage: test
+  script:
+    - pip install -r requirements-plugins.txt
+    - make coverage-html
+  artifacts:
+    paths:
+      - "htmlcov/*"
+
+type-coverage:
+  stage: test
+  script:
+    - pip install lxml
+    - make coverage-typing
+  artifacts:
+    paths:
+      - "mypy-coverage/*"

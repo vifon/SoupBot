@@ -35,7 +35,7 @@ typing:
 
 .PHONY: coverage-typing
 coverage-typing: mypy-coverage/index.html
-	xdg-open file://$(PWD)/$<
+	xdg-open file://$(PWD)/$< || true
 
 mypy-coverage/index.html: $(PY_SOURCES)
 	mypy --pretty -m bot -p irc --html-report mypy-coverage
@@ -55,7 +55,7 @@ coverage: .coverage
 
 .PHONY: coverage-html
 coverage-html: htmlcov/index.html
-	xdg-open file://$(PWD)/$<
+	xdg-open file://$(PWD)/$< || true
 
 htmlcov/index.html: .coverage
 	coverage html

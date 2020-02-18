@@ -31,7 +31,7 @@ start_test_server() {
     IRC_SERVER_PID="$!"
     ./tests/http_mock.py &> /dev/null &
     HTTP_SERVER_PID="$!"
-    sleep 0.2
+    sleep 0.5
 }
 
 start_test_client() {
