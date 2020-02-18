@@ -7,7 +7,7 @@ python:
   - '3.8'
 
 install:
-  - 'pip install -r requirements-test.txt'
+  - 'pip install -r requirements-test.txt -r requirements-plugins.txt'
 
 script:
   - 'make test'
