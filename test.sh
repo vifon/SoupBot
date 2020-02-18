@@ -64,3 +64,4 @@ stop_test_server() {
 trap stop_test_server EXIT INT TERM
 start_test_server
 start_test_client "$@"
+wait "$IRC_SERVER_PID"
