@@ -49,7 +49,7 @@ start_test_client() {
     fi
 
     if (( "$VERBOSE" )); then
-        "${COMMAND[@]}"
+        "${COMMAND[@]}" &> test.log
     else
         "${COMMAND[@]}" &> /dev/null
     fi
@@ -58,6 +58,10 @@ start_test_client() {
 stop_test_server() {
     kill "$IRC_SERVER_PID" 2> /dev/null && echo "Killed the test IRC server." || true
     kill "$HTTP_SERVER_PID" 2> /dev/null && echo "Killed the test HTTP server." || true
+    if [ -e test.log ]; then
+        cat test.log
+        rm -f test.log
+    fi
     exit
 }
 

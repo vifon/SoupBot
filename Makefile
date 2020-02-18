@@ -12,7 +12,12 @@ help:
 	@ echo "    make coverage-html"
 
 .PHONY: test
-test: pylint flake8 typing unittest
+test: pylint flake8 typing
+	./test.sh
+
+.PHONY: test-verbose
+test-verbose: pylint flake8 typing
+	./test.sh -v
 
 .PHONY: clean
 clean:
@@ -39,11 +44,6 @@ coverage-typing: mypy-coverage/index.html
 
 mypy-coverage/index.html: $(PY_SOURCES)
 	mypy --pretty -m bot -p irc --html-report mypy-coverage
-
-
-.PHONY: unittest
-unittest:
-	./test.sh
 
 
 .PHONY: coverage

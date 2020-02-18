@@ -19,7 +19,7 @@ tests:
   stage: test
   script:
     - pip install -r requirements-plugins.txt
-    - ./test.sh -v
+    - make test-verbose
 
 test-coverage:
   stage: test
