@@ -25,7 +25,7 @@ test-coverage:
   stage: test
   script:
     - pip install -r requirements-plugins.txt
-    - make coverage-html
+    - make coverage coverage-html
   artifacts:
     paths:
       - "htmlcov/*"
