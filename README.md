@@ -1,6 +1,9 @@
 SoupBot
 =======
 
+[![pipeline status](https://gitlab.com/wsiewierski/soupbot/badges/master/pipeline.svg)](https://gitlab.com/wsiewierski/soupbot/-/commits/master)
+[![coverage report](https://gitlab.com/wsiewierski/soupbot/badges/master/coverage.svg)](https://gitlab.com/wsiewierski/soupbot/-/commits/master)
+
 SoupBot is a yet another extensible IRC bot.  It's implemented using
 `asyncio` and raw sockets for IRC communication.  It uses YAML for
 configuration.
