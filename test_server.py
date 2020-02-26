@@ -279,6 +279,11 @@ class IRCTests(unittest.TestCase):
             Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
             Recv("PRIVMSG #test-channel1 :End of scores."),
 
+            Send(f"{self.admin} PRIVMSG #test-channel1 :.scores -5"),
+            Recv("PRIVMSG #test-channel1 :bacon's score is 2."),
+            Recv(f"PRIVMSG #test-channel1 :{self.bot.nick}'s score is 3."),
+            Recv("PRIVMSG #test-channel1 :End of scores."),
+
             SendRecv(f"{self.admin} PRIVMSG #test-channel1"
                      f" :.descore {self.bot.nick}",
                      "PRIVMSG #test-channel1"

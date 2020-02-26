@@ -14,7 +14,7 @@ class UserScoreQueryMixin(IRCCommandPlugin):
         super().__init__(*args, **kwargs)
         self.commands.update({
             r'\.score +(\w+)': self.__show_score,
-            r'\.scores(?: +([0-9]+))?$': self.__list_scores,
+            r'\.scores(?: +(-?[0-9]+))?$': self.__list_scores,
         })
 
     async def __show_score(self, sender, channel, match, msg):
@@ -28,6 +28,12 @@ class UserScoreQueryMixin(IRCCommandPlugin):
 
     async def __list_scores(self, sender, channel, match, msg):
         count = int(match[1] or 5)
+        if count < 0:
+            count = -count
+            order = 'ASC'
+        else:
+            order = 'DESC'
+
         max_request = self.config['max_scoreboard_request'] or 10
 
         try:
@@ -45,10 +51,10 @@ class UserScoreQueryMixin(IRCCommandPlugin):
             return
         c = self.db.cursor()
         c.execute(
-            '''
+            f'''
             SELECT nick, score FROM score
             WHERE channel=?
-            ORDER BY score DESC
+            ORDER BY score {order}
             LIMIT ?
             ''',
             (channel, count)
