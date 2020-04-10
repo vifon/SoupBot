@@ -13,6 +13,10 @@ class HTTPPreview(IRCPlugin):
     async def react(self, msg: IRCMessage) -> None:
         if msg.command == 'PRIVMSG':
             assert msg.sender is not None
+
+            if msg.sender.identity in self.config.get('ignore', []):
+                return
+
             channel = msg.args[0]
             nick = msg.sender.nick
             async with httpx.AsyncClient() as client:
