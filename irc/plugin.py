@@ -123,15 +123,6 @@ class IRCCommandPlugin(IRCPlugin):
                         return True
         return await super().react(msg)
 
-    async def command(
-            self,
-            sender: 'IRCUser',
-            channel: str,
-            match: Match,
-            msg: 'IRCMessage',
-    ) -> Optional[bool]:
-        raise NotImplementedError()
-
 
 def authenticated(
         method: Callable[..., Awaitable[Optional[bool]]]) -> Callable:
