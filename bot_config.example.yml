@@ -1,6 +1,7 @@
 server: irc.freenode.net
 port: 7000
 ssl: true
+logging: logging.conf
 
 bot:
   nick: SoupBot

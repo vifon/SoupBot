@@ -5,18 +5,13 @@ from collections import namedtuple
 import argparse
 import asyncio
 import logging
+import logging.config
 import os
 import signal
 import yaml
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
-    datefmt="%H:%M:%S"
-)
 
 
-def load_config(path):
+def load_config(path) -> dict:
     with open(path, 'r') as conf_fd:
         return yaml.safe_load(conf_fd.read())
 
@@ -36,6 +31,11 @@ async def run_bot():
     args = parser.parse_args()
 
     conf = load_config(args.config_file)
+
+    log_config = conf.get('logging', 'logging.conf')
+    logging.config.fileConfig(log_config)
+    logger = logging.getLogger(__name__)
+
     hostname = conf['server']
     port = conf['port']
     ssl = conf.get('ssl', True)
