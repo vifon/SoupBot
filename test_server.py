@@ -8,7 +8,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S"
 )
 
-from irc.__main__ import load_config, Socket  # noqa: F401
+from irc import load_config, Socket  # noqa: F401
 from datetime import datetime        # noqa: F401
 from irc.client import IRCClient     # noqa: F401
 from irc.user import IRCUser         # noqa: F401

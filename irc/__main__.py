@@ -1,27 +1,18 @@
 #!/usr/bin/env python3
 
+from irc import load_config, Socket
 from irc.client import IRCClient
-from collections import namedtuple
 import argparse
 import asyncio
 import logging
 import logging.config
 import os
 import signal
-import yaml
-
-
-def load_config(path) -> dict:
-    with open(path, 'r') as conf_fd:
-        return yaml.safe_load(conf_fd.read())
 
 
 def live_debug(*ignore):
     import pdb
     pdb.set_trace()
-
-
-Socket = namedtuple('Socket', ('reader', 'writer'))
 
 
 async def run_bot():
