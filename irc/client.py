@@ -17,11 +17,13 @@ class IRCClient:
             encoding: str = 'utf-8',
             sqlite_db: str = ':memory:',
             delay: int = 2,
+            queue_size: int = 24,
             **config: Any,
     ):
         self.socket = socket
         self.encoding = encoding
         self.delay = delay
+        self.queue_size = queue_size
         self.config = config
         self.logger = logger.getChild(type(self).__name__)
         self.db = sqlite3.connect(
@@ -32,7 +34,7 @@ class IRCClient:
         self._buffer = bytearray()
         self.plugins: List['IRCPlugin'] = []
         self.shared_data = SimpleNamespace()
-        self.outgoing_queue: asyncio.Queue = asyncio.Queue()
+        self.outgoing_queue: asyncio.Queue = asyncio.Queue(self.queue_size)
 
     def __aiter__(self):
         return self
@@ -168,6 +170,7 @@ class IRCClient:
                             config=plugin_config,
                             client=self,
                             old_data=old_data.get(plugin_class),
+                            queue_size=self.queue_size,
                         )
                     yield plugin
                 except Exception:
