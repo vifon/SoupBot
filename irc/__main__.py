@@ -88,7 +88,7 @@ async def run_bot():
             return
 
 
-if __name__ == '__main__':
+def start_event_loop():
     loop = asyncio.get_event_loop()
     try:
         bot_task = asyncio.ensure_future(run_bot())
@@ -103,3 +103,7 @@ if __name__ == '__main__':
             pass
         loop.run_until_complete(loop.shutdown_asyncgens())
         loop.close()
+
+
+if __name__ == '__main__':
+    start_event_loop()

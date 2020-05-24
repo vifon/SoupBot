@@ -15,4 +15,6 @@ RUN chown -R app:app /home/app
 USER app
 ADD . /home/app
 
-CMD ["/usr/bin/python3", "./bot.py", "./config.yml"]
+RUN ./setup.py install
+
+CMD ["/usr/bin/python3", "soupbot", "./config.yml"]

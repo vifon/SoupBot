@@ -1,4 +1,4 @@
-PY_SOURCES = bot.py $(wildcard irc/*.py irc/plugins/*.py)
+PY_SOURCES = $(wildcard irc/*.py irc/plugins/*.py)
 PY_TEST_SOURCES = test_server.py $(wildcard lib/*.py lib/test/*.py)
 
 .PHONY: all
@@ -32,18 +32,18 @@ pylint:
 
 .PHONY: flake8
 flake8:
-	flake8 bot.py irc
+	flake8 irc
 
 .PHONY: typing
 typing:
-	mypy --pretty -m bot -p irc
+	mypy --pretty -p irc
 
 .PHONY: coverage-typing
 coverage-typing: mypy-coverage/index.html
 	xdg-open file://$(PWD)/$< || true
 
 mypy-coverage/index.html: $(PY_SOURCES)
-	mypy --pretty -m bot -p irc --html-report mypy-coverage
+	mypy --pretty -p irc --html-report mypy-coverage
 
 
 .PHONY: coverage

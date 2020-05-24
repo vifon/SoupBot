@@ -27,9 +27,13 @@ RUNNING
         $ pip install -r requirements.txt
         $ pip install -r requirements-plugins.txt  # needed only for some plugins
 
+3. Install the bot into the virtualenv:
+
+        $ ./setup.py install
+
 3. Edit the config (example in `bot_config.example.yml`) and run:
 
-        $ ./bot.py your_config.yml
+        $ soupbot your_config.yml
 
 **Docker**
 

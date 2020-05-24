@@ -36,7 +36,7 @@ start_test_server() {
 
 start_test_client() {
     local COMMAND
-    COMMAND=(./bot.py test_config.yml)
+    COMMAND=(soupbot test_config.yml)
 
     if (( "$COVERAGE" )); then
         COMMAND=(
