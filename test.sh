@@ -40,7 +40,7 @@ start_test_client() {
 
     if (( "$COVERAGE" )); then
         COMMAND=(
-            coverage run --branch --source=bot,irc "${COMMAND[@]}"
+            coverage run --branch --source=irc -m irc test_config.yml
         )
     fi
 
