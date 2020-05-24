@@ -25,6 +25,7 @@ class NotAuthorizedError(Exception):
 class IRCPlugin:
     def __init__(
             self,
+            *,
             client: 'IRCClient',
             queue_size: int,
             config: Dict,
