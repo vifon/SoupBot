@@ -19,7 +19,6 @@ def load_config(path) -> dict:
 def live_debug(*ignore):
     import pdb
     pdb.set_trace()
-signal.signal(signal.SIGUSR2, live_debug)  # noqa: E305
 
 
 Socket = namedtuple('Socket', ('reader', 'writer'))
@@ -106,4 +105,5 @@ def start_event_loop():
 
 
 if __name__ == '__main__':
+    signal.signal(signal.SIGUSR2, live_debug)  # noqa: E305
     start_event_loop()
