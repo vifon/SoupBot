@@ -55,14 +55,6 @@ def host():
     return "localhost"
 
 
-@pytest.fixture(scope="session")
-def event_loop(request):
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
 @pytest.fixture(scope="class")
 async def client(config, event_loop):
     server_sock = socket.socket()
@@ -415,7 +407,7 @@ class TestIRC:
                         " :A short but malicious \0 message."),
         ])
 
-    @pytest.mark.xfail          # TODO
+    @pytest.mark.usefixtures('http_server')
     @pytest.mark.asyncio
     async def test_10_http_preview(self, client, admin):
         url = "http://127.0.0.1:8080"
