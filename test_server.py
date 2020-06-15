@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 
-import logging
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.WARNING,
-    format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
-    datefmt="%H:%M:%S"
-)
+import logging.config
+logging.config.fileConfig("tests/logging.conf")
 
 from irc import load_config, Socket  # noqa: F401
 from irc.user import IRCUser         # noqa: F401

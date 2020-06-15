@@ -1,9 +1,12 @@
 from typing import List
 import asyncio
+import logging
 import pytest
 import re
 
 from irc.client import IRCClient
+
+logger = logging.getLogger(__name__)
 
 
 class ConversationStep:
@@ -20,9 +23,9 @@ class ConversationDelay(ConversationStep):
         self.delay = delay
 
     async def __call__(self, client):
-        # logger.debug("Waiting for %d seconds…", self.delay)
+        logger.debug("Waiting for %d seconds…", self.delay)
         await asyncio.sleep(self.delay)
-        # logger.debug("Continuing after the delay.")
+        logger.debug("Continuing after the delay.")
         await super().__call__(client)
 
 
@@ -32,7 +35,7 @@ class ConversationSend(ConversationStep):
         self.msg = msg
 
     async def __call__(self, client):
-        # logger.debug("Sending %s", self.msg)
+        logger.debug("Sending %s", self.msg)
         await client._send(self.msg, allow_unsafe=True)
         await super().__call__(client)
 
@@ -44,13 +47,13 @@ class ConversationRecv(ConversationStep):
         self.regexp = regexp
 
     async def __call__(self, client):
-        # logger.debug("Expecting %s", self.expected_resp)
+        logger.debug("Expecting %s", self.expected_resp)
         try:
             received_resp = await asyncio.wait_for(client.recv(), timeout=5)
         except asyncio.TimeoutError:
-            # logger.error('Expected "%s", got nothing.', self.expected_resp)
+            logger.error('Expected "%s", got nothing.', self.expected_resp)
             raise
-        # logger.debug("Received %s", received_resp)
+        logger.debug("Received %s", received_resp)
         if self.regexp:
             assert re.match(self.expected_resp, str(received_resp))
         else:
