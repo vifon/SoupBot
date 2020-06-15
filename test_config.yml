@@ -2,8 +2,6 @@ server: 127.0.0.1
 port: 6667
 ssl: false
 
-# log_level: DEBUG
-
 bot:
   nick: TestBot
   name: A pluggable IRC bot, test instance

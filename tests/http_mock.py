@@ -51,8 +51,8 @@ def http_mock_server():
     def redirecting_webpage_mutual2():
         return redirect("/redirecting-webpage-mutual")
 
-    app.run(host="127.0.0.1", port=8080, threaded=True)
+    return app
 
 
 if __name__ == '__main__':
-    http_mock_server()
+    http_mock_server().run(host="127.0.0.1", port=8080, threaded=True)
