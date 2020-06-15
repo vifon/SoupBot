@@ -345,7 +345,7 @@ class TestIRC:
 
             SendRecv(f"{admin} PRIVMSG #test-channel1"
                      " :.descore bacon",
-                     f"PRIVMSG #test-channel1 :bacon's score erased."),
+                     "PRIVMSG #test-channel1 :bacon's score erased."),
             SendRecv(f"{admin} PRIVMSG #test-channel1 :.score bacon",
                      "PRIVMSG #test-channel1 :bacon has no score."),
 
