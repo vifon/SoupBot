@@ -29,7 +29,7 @@ shift $((OPTIND-1))
 start_test_server() {
     ./test_server.py &
     IRC_SERVER_PID="$!"
-    sleep 2
+    sleep ${TEST_SLEEP:-2}
 }
 
 start_test_client() {
