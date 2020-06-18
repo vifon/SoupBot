@@ -22,8 +22,15 @@ async def run_bot():
 
     conf = load_config(args.config_file)
 
-    log_config = conf.get('logging', 'logging.conf')
-    logging.config.fileConfig(log_config)
+    try:
+        logging.config.dictConfig(conf['logging'])
+    except KeyError:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
+            datefmt="%H:%M:%S"
+        )
+
     logger = logging.getLogger(__name__)
 
     hostname = conf['server']

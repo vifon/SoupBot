@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging.config
-logging.config.fileConfig("tests/logging.conf")
 
 from irc import load_config, Socket  # noqa: F401
 from irc.user import IRCUser         # noqa: F401
@@ -25,6 +24,11 @@ from tests.conversation import (                     # noqa: F401
 @pytest.fixture(scope="session")
 def config():
     return load_config("test_config.yml")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def logger(config):
+    logging.config.dictConfig(config['logging'])
 
 
 @pytest.fixture

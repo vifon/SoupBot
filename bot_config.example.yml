@@ -1,7 +1,22 @@
 server: irc.freenode.net
 port: 7000
 ssl: true
-logging: logging.conf
+
+logging:
+  version: 1
+  root:
+    level: INFO
+    handlers:
+      - console
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: console
+      stream: ext://sys.stdout
+  formatters:
+    console:
+      format: "%(asctime)s %(levelname)s:%(name)s: %(message)s"
+      datefmt: "%H:%M:%S"
 
 bot:
   nick: SoupBot
