@@ -15,14 +15,11 @@ class HTTPPreview(IRCPlugin):
 
     retries = 3
 
-    bad_results = {
-        r'^https?://(?:www\.)?youtube\.com/': 'YouTube',
-    }
-
     def get_bad_result(self, url):
-        for pattern in self.bad_results:
-            if re.search(pattern, url):
-                return self.bad_results[pattern]
+        ignores = self.config.get('ignored_titles', {})
+        for url_pattern, response_pattern in ignores.items():
+            if re.search(url_pattern, url):
+                return response_pattern
 
     async def generate_preview(
             self,
@@ -57,7 +54,7 @@ class HTTPPreview(IRCPlugin):
             self.logger.debug(
                 "%s title extracted: %s", url, title
             )
-            if title == bad_result:
+            if bad_result and re.search(bad_result, title):
                 self.logger.info(
                     'The title matched the expected "bad title", retrying…'
                 )
@@ -69,7 +66,7 @@ class HTTPPreview(IRCPlugin):
         if msg.command == 'PRIVMSG':
             assert msg.sender is not None
 
-            if msg.sender.identity in self.config.get('ignore', []):
+            if msg.sender.identity in self.config.get('ignored_users', []):
                 return
 
             channel = msg.args[0]
