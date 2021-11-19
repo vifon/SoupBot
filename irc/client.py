@@ -32,7 +32,7 @@ class IRCClient:
         )
         self.nick = self.config['nick']
         self._buffer = bytearray()
-        self.plugins: List['IRCPlugin'] = []
+        self.plugins: Dict[str, 'IRCPlugin'] = {}
         self.shared_data = SimpleNamespace()
         self.outgoing_queue: asyncio.Queue = asyncio.Queue(self.queue_size)
 
@@ -98,7 +98,7 @@ class IRCClient:
         async def irc_reader():
             try:
                 async for msg in self:
-                    for plugin in self.plugins:
+                    for name, plugin in self.plugins.items():
                         plugin.logger.debug(
                             "Queue size on append: %d", plugin.queue.qsize()
                         )
@@ -120,7 +120,7 @@ class IRCClient:
         async def plugin_runner():
             try:
                 await asyncio.gather(
-                    *(plugin.event_loop() for plugin in self.plugins)
+                    *(plugin.event_loop() for plugin in self.plugins.values())
                 )
             except asyncio.CancelledError:
                 self.logger.info("Forcibly closing all plugins.")
@@ -172,26 +172,26 @@ class IRCClient:
                             old_data=old_data.get(plugin_class),
                             queue_size=self.queue_size,
                         )
-                    yield plugin
+                    yield plugin_class, plugin
                 except Exception:
                     self.logger.exception(
                         "%s caused an exception during loading.", plugin_class
                     )
                     failed_plugins.append(plugin_class)
 
-        self.plugins.extend(load_plugins_helper())
+        self.plugins.update(load_plugins_helper())
         self.logger.info(
             "Initialized plugins: %s",
-            [type(plugin).__name__ for plugin in self.plugins],
+            list(self.plugins.keys()),
         )
         if failed_plugins:
             self.logger.warning("Failed plugins: %s", failed_plugins)
-        for plugin in self.plugins:
+        for plugin in self.plugins.values():
             plugin.start()
 
     def unload_plugins(self) -> Dict[str, Any]:
         self.logger.info("Unloading plugins…")
         old_data = vars(self.shared_data)
-        self.plugins = []
+        self.plugins = {}
         self.shared_data = SimpleNamespace()
         return old_data
