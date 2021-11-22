@@ -28,6 +28,8 @@ admins: &admins
 
 plugins:
   - irc.plugins.pong.PongPlugin
+  - irc.plugins.watchdog.Watchdog:
+      timeout: 300
   - irc.plugins.channels.ChannelManager:
       channels:
         - '#example'
