@@ -50,7 +50,7 @@ class HTTPPreview(IRCPlugin):
             )
             self.logger.debug("%s parsed.", url)
 
-            title: str = soup.title.get_text().strip()
+            title: str = " ".join(soup.title.get_text().split())
             self.logger.debug(
                 "%s title extracted: %s", url, title
             )
