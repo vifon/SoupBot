@@ -1,4 +1,4 @@
 # irc.plugins.http_preview.HTTPPreview
 beautifulsoup4==4.8.2
-httpx==0.11.1
+httpx==0.23.0
 urlextract==0.14.0
