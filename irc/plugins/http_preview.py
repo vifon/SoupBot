@@ -91,5 +91,5 @@ class HTTPPreview(IRCPlugin):
                         if title:
                             self.client.send(IRCMessage(
                                 'PRIVMSG', channel,
-                                body=f"{nick}: {title}",
+                                body=title,
                             ))
